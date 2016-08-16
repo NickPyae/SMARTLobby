@@ -1,9 +1,4 @@
 angular.module('SMARTLobby.directives', [])
-  .directive('visitorStatsComponent',function() {
-    return {
-      templateUrl: 'templates/visitor-stats-component.html'
-    };
-  })
   .directive('visitorComponent',function() {
     return {
       templateUrl: 'templates/visitor-component.html'
@@ -65,6 +60,52 @@ angular.module('SMARTLobby.directives', [])
   .directive('pieChartComponent', function (ContactStatusService, $state) {
     return {
       link: function (scope, element, attrs) {
+
+        var pieChartConfig = {
+          type: 'pie',
+          data: {
+            labels: [
+              APP_CONFIG.CONTACT_STATUS.UNCONTACTED,
+              APP_CONFIG.CONTACT_STATUS.NO_REPLY,
+              APP_CONFIG.CONTACT_STATUS.VACATING,
+              APP_CONFIG.CONTACT_STATUS.EVACUATED
+            ],
+            datasets: [{
+              data: [40, 12, 20, 21],
+              backgroundColor: [
+                '#454242', //Gray
+                '#FF0000', //Red
+                '#FFC200', //Amber
+                '#008000' //Green
+              ],
+              hoverBackgroundColor: [
+                '#736F6E', //Light Gray
+                '#f65656', //Light Red
+                '#ffda66', //Light Amber
+                '#4ca64c' //Light Green
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            tooltips: {
+              enabled: true,
+            },
+            legend: {
+              position: 'top',
+              onClick: function (event, legendItem) {
+              },
+              labels: {
+                fontSize: 9
+              }
+            },
+            showNumberOnSlice: true
+          }
+        };
+
+
+        var pieChartCanvas = document.getElementById('pieChart').getContext('2d');
+        var pieChart = new Chart(pieChartCanvas, pieChartConfig);
 
         Chart.pluginService.register({
           afterDraw: function (chart, easing) {
@@ -135,52 +176,6 @@ angular.module('SMARTLobby.directives', [])
             }
           }
         });
-
-        var pieChartConfig = {
-          type: 'pie',
-          data: {
-            labels: [
-              APP_CONFIG.CONTACT_STATUS.UNCONTACTED,
-              APP_CONFIG.CONTACT_STATUS.NO_REPLY,
-              APP_CONFIG.CONTACT_STATUS.VACATING,
-              APP_CONFIG.CONTACT_STATUS.EVACUATED
-            ],
-            datasets: [{
-              data: [40, 12, 20, 21],
-              backgroundColor: [
-                '#454242', //Gray
-                '#FF0000', //Red
-                '#FFC200', //Amber
-                '#008000' //Green
-              ],
-              hoverBackgroundColor: [
-                '#736F6E', //Light Gray
-                '#f65656', //Light Red
-                '#ffda66', //Light Amber
-                '#4ca64c' //Light Green
-              ]
-            }]
-          },
-          options: {
-            responsive: true,
-            tooltips: {
-              enabled: true,
-            },
-            legend: {
-              position: 'top',
-              onClick: function (event, legendItem) {
-              },
-              labels: {
-                fontSize: 9
-              }
-            },
-            showNumberOnSlice: true
-          }
-        };
-
-
-        var pieChartCanvas = document.getElementById('pieChart').getContext('2d');
-        var pieChart = new Chart(pieChartCanvas, pieChartConfig);
 
         document.getElementById('pieChart').onclick = function(evt)
         {

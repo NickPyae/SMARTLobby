@@ -14,6 +14,7 @@ angular.module('SMARTLobby.controllers', [])
     var flipTimer = null;
 
     $scope.$on('$ionicView.beforeEnter', function (event, data) {
+
       if (!AppModeService.getMode()) {
         $scope.mode = APP_CONFIG.MODE.DEFAULT;
       } else {
@@ -75,6 +76,7 @@ angular.module('SMARTLobby.controllers', [])
 
         confirmPopup.then(function (res) {
           if (res) {
+
             // Update global timer sec
             updateTimer();
 
@@ -146,7 +148,7 @@ angular.module('SMARTLobby.controllers', [])
                                         localStorageService, ionicToast,
                                         CallService, SMSService, APP_CONFIG,
                                         ContactStatusService, $timeout, TimerService,
-                                        AppModeService, AppColorThemeService) {
+                                        AppModeService, AppColorThemeService, MaskFactory) {
 
     $scope.$on('$ionicView.beforeEnter', function (event, data) {
       console.log(APP_CONFIG);
@@ -174,7 +176,6 @@ angular.module('SMARTLobby.controllers', [])
         filterVisitorsByStatus(contactStatus);
       }
     });
-
 
     $scope.groups = [];
 
@@ -214,7 +215,6 @@ angular.module('SMARTLobby.controllers', [])
       }
     };
 
-
     $scope.bulkMessage = function () {
       SMSService.sendSMS('+65234343434');
     };
@@ -236,8 +236,6 @@ angular.module('SMARTLobby.controllers', [])
     $scope.toggleMode = function () {
 
       if ($scope.mode === APP_CONFIG.MODE.DEFAULT) {
-
-
         var confirmPopup = $ionicPopup.show({
           title: 'Activating ' + APP_CONFIG.MODE.EMERGENCY + ' mode',
           buttons: [
@@ -352,9 +350,9 @@ angular.module('SMARTLobby.controllers', [])
     }
 
     function getAllVisitors() {
+      MaskFactory.loadingMask(true, 'Loading');
 
       Visitors.getAllVisitors().then(function (visitors) {
-
         var sortedVisitors = sortVisitorsByName(visitors);
 
         $scope.visitors = sortedVisitors;
@@ -363,6 +361,8 @@ angular.module('SMARTLobby.controllers', [])
         if (visitors && visitors.length) {
           groupVisitors($scope.visitors);
         }
+
+        MaskFactory.loadingMask(false);
 
         // Updated visitors to be used by meeting detail
         Visitors.updateVisitors($scope.visitors);
@@ -422,10 +422,6 @@ angular.module('SMARTLobby.controllers', [])
 
       return sortedVisitors;
     }
-
-    $scope.refreshVisitors = function () {
-      watchFilterChanges();
-    };
 
     $scope.goToItem = function (meetingID) {
       if (meetingID === 1) {
@@ -605,8 +601,6 @@ angular.module('SMARTLobby.controllers', [])
 
         return $scope.groups;
       } else {
-        $scope.searchResult = 'No Results';
-
         return $scope.groups = [];
       }
 

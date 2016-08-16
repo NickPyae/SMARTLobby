@@ -172,11 +172,15 @@ body {
 
 /** Visitors list divider */
 .divider-title {
-  position: absolute; left: 40px; bottom: 15px;  font-size: 20px; cursor: pointer;
+  position: absolute; left: 50px; bottom: 15px;  font-size: 20px; cursor: pointer;
 }
 
 .divider-left-icon {
   position: absolute; bottom: 0px; left: 0px;
+}
+
+.divider-left-icon-larger {
+  font-size: 28px;
 }
 
 .divider-height {
