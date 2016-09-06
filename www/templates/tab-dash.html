@@ -1,11 +1,16 @@
 <ion-view view-title="Dashboard">
+  <ion-nav-buttons side="left">
+    <button class="button button-icon icon ion-android-more-vertical"
+            ng-click="popover.show($event)">
+    </button>
+  </ion-nav-buttons>
   <ion-nav-buttons side="right">
     <button class="button button-outline button-light"
             ng-click="toggleMode()">
       {{mode}}
     </button>
   </ion-nav-buttons>
-  <ion-content has-bouncing="false">
+  <ion-content has-bouncing="false" delegate-handle="mainScroll">
     <div class="list">
       <div class="card" ng-show="mode === 'Emergency'">
         <div class="item item-divider">
@@ -30,26 +35,26 @@
         </div>
         <div class="item item-text-wrap">
           <!-- Ionic Grid -->
-          <div class ="row">
-            <div class ="col" ng-if="mode === 'Normal'">
+          <div class="row">
+            <div class="col" ng-if="mode === 'Normal'">
               <div class="row">
-                <h1 style="width: 100%; text-align: center;">150</h1>
+                <h1 style="width: 100%; text-align: center;">{{selectedSite.totalCheckin}}</h1>
               </div>
               <div class="row">
                 <h3 style="width: 100%; text-align: center;">Checked-in</h3>
               </div>
             </div>
-            <div class ="col">
+            <div class="col">
               <div class="row">
-                <h1 style="width: 100%; text-align: center;">80</h1>
+                <h1 style="width: 100%; text-align: center;">{{selectedSite.inBuildingVisitor}}</h1>
               </div>
               <div class="row">
                 <h3 style="width: 100%; text-align: center;">In-building</h3>
               </div>
             </div>
-            <div class ="col">
+            <div class="col">
               <div class="row">
-                <h1 style="width: 100%; text-align: center;">15</h1>
+                <h1 style="width: 100%; text-align: center;">{{selectedSite.inBuildingHost}}</h1>
               </div>
               <div class="row">
                 <h3 style="width: 100%; text-align: center;">Hosts</h3>
@@ -59,7 +64,19 @@
         </div>
       </div>
 
-      <div class="card" ng-if="mode === 'Emergency'">
+      <div class="card" ng-if="mode === 'Normal'">
+        <div class="item item-divider">
+          <i class="icon ion-stats-bars divider-icon-left divider-left-icon-larger">
+            <span class="divider-title">{{selectedSite.siteName}}</span>
+          </i>
+        </div>
+
+        <div class="item item-text-wrap">
+          <canvas id="comboChart" width="350" height="350" combo-chart-component></canvas>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="item item-divider">
           <i class="icon ion-pie-graph divider-icon-left divider-left-icon-larger">
             <span class="divider-title">Contact Statuses</span>
@@ -70,21 +87,23 @@
           <canvas id="pieChart" width="350" height="350" pie-chart-component></canvas>
         </div>
       </div>
-      <div class="card" ng-if="mode === 'Normal'">
-        <div class="item item-divider">
-          <i class="icon ion-stats-bars divider-icon-left divider-left-icon-larger">
-            <span class="divider-title">NexLabs Singapore</span>
-          </i>
-        </div>
+    </div>
 
-        <div class="item item-text-wrap">
-          <canvas id="comboChart" width="350" height="350" combo-chart-component></canvas>
-        </div>
-      </div>
-        </div>
-      </div>
-    </div>
-    </div>
+
   </ion-content>
 </ion-view>
 
+<script id="templates/site-popover.html" type="text/ng-template">
+  <ion-popover-view class="fit">
+    <ion-content scroll="false">
+      <div class="list">
+        <ion-radio ng-repeat="site in sites"
+                   ng-value="site.siteName"
+                   ng-model="selectedSite.siteName"
+                   ng-change="siteHasChanged(site)">
+          {{site.siteName}}
+        </ion-radio>
+      </div>
+    </ion-content>
+  </ion-popover-view>
+</script>

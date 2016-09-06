@@ -2,8 +2,13 @@ angular.module('SMARTLobby.services', [])
 
   .service('VisitorStatusService', function (APP_CONFIG) {
 
-    this.service_1 = APP_CONFIG.VOIP_SERVICE.SKYPE;
+    this.service_1 = APP_CONFIG.VOIP_SERVICE.ANY;
     this.service_2 = APP_CONFIG.VOIP_SERVICE.JABBER;
+    this.service_3 = APP_CONFIG.VOIP_SERVICE.SKYPE;
+
+    this.sms_service_1 = APP_CONFIG.SMS_SERVICE.ANY;
+    this.sms_service_2 = APP_CONFIG.SMS_SERVICE.DEFAULT;
+    this.sms_service_3 = APP_CONFIG.SMS_SERVICE.WHATSAPP;
 
     this.emergencyContactStatusFilters = [
       {
@@ -26,10 +31,10 @@ angular.module('SMARTLobby.services', [])
 
 
     this.emergencyContactStatuses = [
-      { status: APP_CONFIG.CONTACT_STATUS.UNCONTACTED },
-      { status: APP_CONFIG.CONTACT_STATUS.NO_REPLY },
-      { status: APP_CONFIG.CONTACT_STATUS.VACATING },
-      { status: APP_CONFIG.CONTACT_STATUS.EVACUATED }
+      {status: APP_CONFIG.CONTACT_STATUS.UNCONTACTED},
+      {status: APP_CONFIG.CONTACT_STATUS.NO_REPLY},
+      {status: APP_CONFIG.CONTACT_STATUS.VACATING},
+      {status: APP_CONFIG.CONTACT_STATUS.EVACUATED}
     ];
 
     this.normalContactStatusFilters = [
@@ -52,26 +57,37 @@ angular.module('SMARTLobby.services', [])
     ];
 
     this.normalContactStatuses = [
-      { status: APP_CONFIG.CONTACT_STATUS.UNCONTACTED },
-      { status: APP_CONFIG.CONTACT_STATUS.NO_REPLY },
-      { status: APP_CONFIG.CONTACT_STATUS.IN_BUILDING },
-      { status: APP_CONFIG.CONTACT_STATUS.LEFT_BUILDING }
+      {status: APP_CONFIG.CONTACT_STATUS.UNCONTACTED},
+      {status: APP_CONFIG.CONTACT_STATUS.NO_REPLY},
+      {status: APP_CONFIG.CONTACT_STATUS.IN_BUILDING},
+      {status: APP_CONFIG.CONTACT_STATUS.LEFT_BUILDING}
     ];
 
     this.voipServices = [
-      { type: this.service_1 },
-      { type: this.service_2 }
+      {type: this.service_1},
+      {type: this.service_2},
+      {type: this.service_3}
     ];
 
-    this.getVoIPServices = function() {
-        return this.voipServices;
-    }
+    this.smsServices = [
+      {type: this.sms_service_1},
+      {type: this.sms_service_2},
+      {type: this.sms_service_3}
+    ];
+
+    this.getVoIPServices = function () {
+      return this.voipServices;
+    };
+
+    this.getSMSServices = function() {
+      return this.smsServices;
+    };
 
     this.getEmergencyContactStatusFilters = function () {
       return this.emergencyContactStatusFilters;
     };
 
-    this.getEmergencyContactStatuses = function() {
+    this.getEmergencyContactStatuses = function () {
       return this.emergencyContactStatuses;
     };
 
@@ -79,21 +95,21 @@ angular.module('SMARTLobby.services', [])
       return this.normalContactStatusFilters;
     };
 
-    this.getNormalContactStatuses = function() {
+    this.getNormalContactStatuses = function () {
       return this.normalContactStatuses;
     };
 
     this.getEmergencyVisitorStatusColour = function (visitor) {
-      if (visitor.contactStatus.toLowerCase() === APP_CONFIG.CONTACT_STATUS.UNCONTACTED.toLowerCase()) {
+      if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.UNCONTACTED) {
         //Gray
         return '#454242'
-      } else if (visitor.contactStatus.toLowerCase() === APP_CONFIG.CONTACT_STATUS.NO_REPLY.toLowerCase()) {
+      } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.NO_REPLY) {
         //Red
         return '#FF0000';
-      } else if (visitor.contactStatus.toLowerCase() === APP_CONFIG.CONTACT_STATUS.VACATING.toLowerCase()) {
+      } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.VACATING) {
         //Amber
         return '#FFC200';
-      } else if (visitor.contactStatus.toLowerCase() === APP_CONFIG.CONTACT_STATUS.EVACUATED.toLowerCase()) {
+      } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.EVACUATED) {
         //Green
         return '#008000';
       } else {
@@ -103,16 +119,16 @@ angular.module('SMARTLobby.services', [])
     };
 
     this.getNormalVisitorStatusColour = function (visitor) {
-      if (visitor.contactStatus.toLowerCase() === APP_CONFIG.CONTACT_STATUS.UNCONTACTED.toLowerCase()) {
+      if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.UNCONTACTED) {
         //Gray
         return '#454242'
-      } else if (visitor.contactStatus.toLowerCase() === APP_CONFIG.CONTACT_STATUS.NO_REPLY.toLowerCase()) {
+      } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.NO_REPLY) {
         //Red
         return '#FF0000';
-      } else if (visitor.contactStatus.toLowerCase() === APP_CONFIG.CONTACT_STATUS.IN_BUILDING.toLowerCase()) {
+      } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.IN_BUILDING) {
         //Amber
         return '#FFC200';
-      } else if (visitor.contactStatus.toLowerCase() === APP_CONFIG.CONTACT_STATUS.LEFT_BUILDING.toLowerCase()) {
+      } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.LEFT_BUILDING) {
         //Green
         return '#008000';
       } else {
@@ -127,78 +143,137 @@ angular.module('SMARTLobby.services', [])
     };
   })
 
-  .service('SMSService', function ($window) {
-    this.sendSMS = function (number) {
+  .service('SMSService', function () {
+    this.sendSMS = function (numbers) {
 
-      // Sending message via whatsapp
-      // location.href = 'whatsapp://send?abid=Alex&text=' + encodeURIComponent(message)
-      var url;
+      var message = '';
 
-      if (ionic.Platform.isIOS()) {
-        url =  'sms:' + number + '&body=' + encodeURIComponent('Reply 1 if you already left building.');
-      } else {
-        url = 'sms:' + number + '?body=' + encodeURIComponent('Reply 1 if you already left building.');
-      }
+      //CONFIGURATION
+      var options = {
+        replaceLineBreaks: false,
+        android: {
+          intent: 'INTENT'
+        }
+      };
 
-      $window.open(url, '_system', 'location=no');
+      sms.send(numbers, message, options);
     };
   })
-  .service('ContactStatusService', function() {
-      this.contactStatus = null
+  .service('ContactStatusService', function () {
+    this.contactStatus = null;
 
-      this.getContactStatus = function() {
-          return this.contactStatus;
-      };
+    this.uncontactedCount = 0;
+    this.noReplyCount = 0;
+    this.inBuildingCount = 0;
+    this.leftBuildingCount = 0;
+    this.vacatingCount = 0;
+    this.evacuatedCount = 0;
 
-      this.setContactStatus = function(contactStatus) {
-        this.contactStatus = contactStatus;
-      };
+    this.getContactStatus = function () {
+      return this.contactStatus;
+    };
+
+    this.setContactStatus = function (contactStatus) {
+      this.contactStatus = contactStatus;
+    };
+
+    this.getUncontactedCount = function () {
+      return this.uncontactedCount;
+    };
+
+    this.getNoReplyCount = function () {
+      return this.noReplyCount;
+    };
+
+    this.getInBuildingCount = function() {
+      return this.inBuildingCount;
+    };
+
+    this.getLeftBuildingCount = function() {
+      return this.leftBuildingCount;
+    };
+
+    this.getVacatingCount = function () {
+      return this.vacatingCount;
+    };
+
+    this.getEvacuatedCount = function () {
+      return this.evacuatedCount;
+    };
+
+    this.setUncontactedCount = function (count) {
+      this.uncontactedCount = count;
+    };
+
+    this.setNoReplyCount = function (count) {
+      this.noReplyCount = count;
+    };
+
+    this.setInBuildingCount = function(count) {
+      this.inBuildingCount = count;
+    };
+
+    this.setLeftBuildingCount = function(count) {
+      this.leftBuildingCount = count;
+    };
+
+    this.setVacatingCount = function (count) {
+      this.vacatingCount = count;
+    };
+
+    this.setEvacuatedCount = function (count) {
+      this.evacuatedCount = count;
+    };
   })
-  .service('TimerService', function() {
-      this.timer = {};
-      this.stoppage = null;
+  .service('TimerService', function () {
+    this.timer = {};
+    this.stoppage = null;
 
-      this.getStoppage = function() {
-          return this.stoppage;
-      };
+    this.getStoppage = function () {
+      return this.stoppage;
+    };
 
-      this.setStoppage = function(stoppage) {
-          this.stoppage = stoppage;
-      };
+    this.setStoppage = function (stoppage) {
+      this.stoppage = stoppage;
+    };
 
-      this.getTimer = function() {
-          return this.timer;
-      };
+    this.getTimer = function () {
+      return this.timer;
+    };
 
-      this.setTimer = function(ref) {
-          this.timer = ref;
-      };
+    this.setTimer = function (ref) {
+      this.timer = ref;
+    };
   })
-  .service('AppModeService', function() {
-      this.mode = null;
+  .service('AppModeService', function () {
+    this.mode = null;
 
-      this.getMode = function() {
-          return this.mode;
-      };
+    this.getMode = function () {
+      return this.mode;
+    };
 
-      this.setMode = function(mode) {
-          this.mode = mode;
-      };
+    this.setMode = function (mode) {
+      this.mode = mode;
+    };
   })
-  .service('AppColorThemeService', function() {
+  .service('AppColorThemeService', function () {
 
-      this.setAppColorTheme = function(navColor, tabColor) {
-        for(var i =0; i <  document.getElementsByTagName('ion-header-bar').length; i++){
-          var classNames = document.getElementsByTagName('ion-header-bar')[i].className;
-          classNames = classNames.replace(/(bar-light|bar-stable|bar-positive|bar-calm|bar-balanced|bar-energized|bar-assertive|bar-royal|bar-dark)/g, navColor);
-          document.getElementsByTagName('ion-header-bar')[i].className = classNames;
-        }
+    this.setAppColorTheme = function (navColor, tabColor) {
+      for (var i = 0; i < document.getElementsByTagName('ion-header-bar').length; i++) {
+        var classNames = document.getElementsByTagName('ion-header-bar')[i].className;
+        classNames = classNames.replace(/(bar-light|bar-stable|bar-positive|bar-calm|bar-balanced|bar-energized|bar-assertive|bar-royal|bar-dark)/g, navColor);
+        document.getElementsByTagName('ion-header-bar')[i].className = classNames;
+      }
 
-        for(var i =0; i <  document.getElementsByTagName('ion-tabs').length; i++){
-          var classNames = document.getElementsByTagName('ion-tabs')[i].className;
-          classNames = classNames.replace(/(tabs-light|tabs-stable|tabs-positive|tabs-calm|tabs-balanced|tabs-energized|tabs-assertive|tabs-royal|tabs-dark)/g, tabColor);
-          document.getElementsByTagName('ion-tabs')[i].className = classNames;
-        }
-      };
+      for (var i = 0; i < document.getElementsByTagName('ion-tabs').length; i++) {
+        var classNames = document.getElementsByTagName('ion-tabs')[i].className;
+        classNames = classNames.replace(/(tabs-light|tabs-stable|tabs-positive|tabs-calm|tabs-balanced|tabs-energized|tabs-assertive|tabs-royal|tabs-dark)/g, tabColor);
+        document.getElementsByTagName('ion-tabs')[i].className = classNames;
+      }
+    };
   })
+
+
+
+
 

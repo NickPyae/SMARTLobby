@@ -1,103 +1,143 @@
 angular.module('SMARTLobby.factories', [])
 
-  .factory('Visitors', function ($q, $http) {
+  .factory('VisitorsFactory', function ($q, $http, APP_CONFIG) {
 
-    function Visitor(id, name, companyName, checkInDateTime, hostName, hostNumber, img, checkInStatus,
-                     contactStatus, contact_1, contact_2, meetingID) {
-      this.id = id;
-      this.name = name;
-      this.companyName = companyName;
-      this.checkInDateTime = checkInDateTime;
-      this.hostName = hostName;
-      this.hostNumber = hostNumber;
-      this.img = img || 'img/visitor.png';
-      this.checkInStatus = null;
-      this.contactStatus = contactStatus || 'Uncontacted';
-      this.contact_1 = contact_1;
-      this.contact_2 = contact_2;
+    function Visitor(guest_contact_1, guest_contact_2, guest_checkInDateTime,
+                     guest_image, guest_name, guest_organization,
+                     host_contact_1, host_contact_2, host_checkInDateTime,
+                     host_image, host_name, host_organization,
+                     meetingID) {
+
+      this.contact_1 = guest_contact_1;
+      this.contact_2 = guest_contact_2;
+      this.contactStatus = 'Uncontacted';
+      this.checkInDateTime = guest_checkInDateTime;
+      this.image = guest_image || 'img/visitor.png';
+      this.name = guest_name;
+      this.organization = guest_organization;
+
+      this.host_contact_1 = host_contact_1;
+      this.host_contact_2 = host_contact_2;
+      this.host_checkInDateTime = host_checkInDateTime;
+      this.host_image = host_image || 'img/visitor.png';
+      this.host_name = host_name;
+      this.host_organization = host_organization;
+
+      this.remark = '';
+      this.id = '';
+
       this.meetingID = meetingID;
-      this.isChecked = false;
-    }
-
-    function Host(companyName, name, contact_1, contact_2, img, checkInDateTime) {
-      this.companyName = companyName;
-      this.name = name;
-      this.contact_1 = contact_1;
-      this.contact_2 = contact_2;
-      this.img = img || 'img/visitor.png';
-      this.checkInDateTime = checkInDateTime;
-    }
-
-    function MeetingDetail(id, location, roomImage, companyName, meetingSubject, hostName, hostNumber, meetingDate, visitors) {
-      this.id = id;
-      this.location = location || 'Orion @ Paya Lebar Road';
-      this.roomImage = roomImage || 'img/16pax-2.jpg';
-      this.companyName = companyName || 'NexLabs Pte Ltd';
-      this.meetingSubject = meetingSubject || 'New project meeting. Lobby Ambassador mobile for iOS and android platforms.';
-      this.meetingHost = hostName || 'Nick';
-      this.hostNumber = hostNumber;
-      this.meetingDate = meetingDate || new Date().toDateString();
-      this.attendees = visitors;
     }
 
     var defer = $q.defer();
 
-    var visitors = [];
-
-    this.updatedVisitors = [];
-
     return {
       getAllVisitors: function () {
-        $http.get('./test/visitors-list.json')
-          .success(function (data) {
-            var allVisitors = [];
+        $http.jsonp(APP_CONFIG.BASE_URI + APP_CONFIG.GET_VISITORS + '&callback=JSON_CALLBACK').
+          success(function (data, status, headers, config) {
+        //$http.get('/test/visitors-list.json').
+        //  success(function (data, status, headers, config) {
+            console.log('JSON from ' + APP_CONFIG.BASE_URI + APP_CONFIG.GET_VISITORS + '\t' + JSON.stringify(data));
 
-            angular.forEach(data, function (item, index) {
-              allVisitors.push(
-                new Visitor(
-                  index, item.g.n, item.g.o, item.g.ci, item.h.n, item.h.c1, item.g.img, '', '',
-                  item.g.c1, item.g.c2, item.sr.id
-                ));
+            var visitors = [];
+
+            angular.forEach(data.v, function (visitor) {
+
+              var v = new Visitor(visitor.g.c1, visitor.g.c2, visitor.g.ci, visitor.g.img, visitor.g.n, visitor.g.o,
+                visitor.h.c1, visitor.h.c2, visitor.h.ci, visitor.h.img, visitor.h.n, visitor.h.o,
+                visitor.sr);
+
+              visitors.push(v);
             });
 
-            // For testing purpose only
-            visitors = allVisitors;
+            // To test with /test/visitors-list.json
+            //angular.forEach(data.v, function (visitor) {
+            //
+            //  var v = new Visitor(visitor.g.c1, visitor.g.c2, visitor.g.ci, visitor.g.img, visitor.g.n, visitor.g.o,
+            //    visitor.h.c1, visitor.h.c2, visitor.h.ci, visitor.h.img, visitor.h.n, visitor.h.o,
+            //    visitor.sr);
+            //
+            //  visitors.push(v);
+            //});
 
             defer.resolve(visitors);
           })
           .error(function (err) {
             defer.reject(err);
-          })
-
-        return defer.promise;
-      },
-      getMeetingDetail: function (meetingID) {
-        var hostNumber = null;
-
-        if (parseInt(meetingID) === 1) {
-
-          angular.forEach(this.getUpdatedVisitors(), function(visitor) {
-            if(parseInt(visitor.meetingID) === 1) {
-              hostNumber = visitor.hostNumber;
-            }
           });
 
-          return new MeetingDetail(
-            meetingID, '', '', '', '', '', hostNumber, '', this.getUpdatedVisitors()
-          );
-        } else {
-          return null;
-        }
-      },
-      updateVisitors: function(visitors) {
-        this.updatedVisitors = visitors;
-      },
-      getUpdatedVisitors: function() {
-            return this.updatedVisitors;
+        return defer.promise;
       }
     };
   })
-  .factory('TimerFactory', ['$http', '$q', function ($http, $q) {
+  .factory('StatsFactory', function ($http, $q, APP_CONFIG) {
+
+    function Site(off, siteId, siteName, tActiveHost, tCin, tOnSite) {
+      this.timeAtSite = off;
+      this.siteId = siteId;
+      this.siteName = siteName;
+      this.inBuildingHost = tActiveHost;
+      this.totalCheckin = tCin;
+      this.inBuildingVisitor = tOnSite;
+      this.siteDetails = [];
+    }
+
+    function SiteDetails(cin, cout, key, siteId, tOnSite) {
+      this.checkin = cin;
+      this.checkout = cout;
+      this.key = key;
+      this.siteId = siteId;
+      this.inBuildingVisitor = tOnSite;
+    };
+
+    var defer = $q.defer();
+
+    return {
+      getAllStats: function () {
+        $http.jsonp(APP_CONFIG.BASE_URI + APP_CONFIG.GET_STATS + '&callback=JSON_CALLBACK').
+          success(function (data, status, headers, config) {
+            console.log('JSON from ' + APP_CONFIG.BASE_URI + APP_CONFIG.GET_STATS + '\t' + JSON.stringify(data));
+
+            var siteList = [];
+            var siteDetailsList = [];
+
+            // Destructuring each site
+            angular.forEach(data.v.i, function (site) {
+              var site = new Site(site.off, site.siteId, site.siteName, site.tActiveHost,
+                site.tCin, site.tOnSite);
+
+              siteList.push(site);
+            });
+
+            // Destructuring each site details
+            angular.forEach(data.v.s, function (details) {
+              var siteDetails = new SiteDetails(details.cin, details.cout,
+                details.key, details.siteId, details.tOnSite);
+
+              siteDetailsList.push(siteDetails);
+            });
+
+            // Adding all site details to sites by siteId
+            angular.forEach(siteDetailsList, function (sd) {
+              angular.forEach(siteList, function (s) {
+                if (sd.siteId === s.siteId) {
+                  s.siteDetails.push(sd);
+                }
+              });
+            });
+
+            defer.resolve(siteList);
+          })
+          .error(function (err) {
+            defer.reject(err);
+          });
+
+        return defer.promise;
+      }
+    }
+
+  })
+  .factory('TimerFactory', function ($http, $q) {
     var deferred = $q.defer();
 
     var timerFactory = {};
@@ -116,8 +156,8 @@ angular.module('SMARTLobby.factories', [])
     };
 
     return timerFactory;
-  }])
-  .factory('MaskFactory', function($ionicLoading, $rootScope) {
+  })
+  .factory('MaskFactory', function ($ionicLoading) {
     var maskTypes = {
       success: {
         icon: '',
@@ -135,50 +175,22 @@ angular.module('SMARTLobby.factories', [])
         color: 'assertive'
       }
     };
-    $rootScope.exitImageFullscreen = function () {
-      $ionicLoading.hide();
-    };
-    return{
-      showMask:function(type, msg){
+
+    return {
+      showMask: function (type, msg) {
         $ionicLoading.show({
-          template:  '<label class="' +  type.color +'">' + msg + '</label>' + ' <i class="' + type.icon + '"/>',
+          template: '<label class="' + type.color + '">' + msg + '</label>' + ' <i class="' + type.icon + '"/>',
           noBackdrop: true,
-          duration:type.dur
+          duration: type.dur
         });
       },
-      imageMask:function(url){
-
-        if(ionic.Platform.isAndroid()) {
-          $ionicLoading.show({
-            template: '<ion-view title="Home" style="background-color:transparent;"  hide-nav-bar="true"><span class="icon ion-ios-close" style="position: fixed;top:10px;right: 10px;font-size:1.5em;" ng-click="exitImageFullscreen()">&nbsp;close</span><ion-scroll zooming="true" direction="xy" scrollbar-x="false" scrollbar-y="false" min-zoom="1" id="scrolly"  style="width: 100%; height: 80%;top:10%;"><img src="' + url + '"></img></ion-scroll></ion-view>',
-            noBackdrop: false
-            //,scope: _scope
-
-          });
-        } else {
-          $ionicLoading.show({
-            template: '<ion-view title="Home" style="background-color:transparent;"  hide-nav-bar="true"><span class="icon ion-ios-close" style="position: fixed;top:28px;right: 10px;font-size:1.5em;" ng-click="exitImageFullscreen()">&nbsp;close</span><ion-scroll zooming="true" direction="xy" scrollbar-x="false" scrollbar-y="false" min-zoom="1" id="scrolly"  style="width: 100%; height: 80%;top:10%;"><img src="' + url + '"></img></ion-scroll></ion-view>',
-            noBackdrop: false
-            //,scope: _scope
-
-          });
-        }
-
-      },
-      confirmMask:function(title, msg, s, fnCall){
-        $ionicLoading.show({
-          scope: s,
-          template: '<div style="height:100%;width:100%"> <h2>' + title + '</h2><p>' + msg + '</p><br><p><button class="button button-positive" ng-click="'+ fnCall + '()">Yes</button><button class="button button-default" ng-click="closeMask()">No</button></p>',
-          noBackdrop: false
-        });
-      },
-      loadingMask:function(show, msg){
-        if(show){
+      loadingMask: function (show, msg) {
+        if (show) {
           $ionicLoading.show({
             template: '<img src="img/ajax-loader.gif"/>' + msg,
             noBackdrop: false
           });
-        }else{
+        } else {
           $ionicLoading.hide();
         }
 

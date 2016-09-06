@@ -12,7 +12,7 @@
     </button>
   </ion-nav-buttons>
 
-  <ion-content has-bouncing="false">
+  <ion-content has-bouncing="false" delegate-handle="mainScroll">
     <ion-list can-swipe="true" swipe-direction="both">
 
       <div ng-repeat="group in groups">
@@ -37,7 +37,7 @@
           </ion-option-button>
 
           <ion-option-button class="button-dark option-button" side="right"
-                             ng-click="call(visitor)">
+                             ng-click="callVisitor(visitor)">
             <i class="icon ion-ios-telephone-outline"></i>
             <span>Call</span>
           </ion-option-button>
@@ -46,7 +46,7 @@
             <i class="icon ion-social-whatsapp-outline"></i>
             <span>VoIP</span>
           </ion-option-button>
-          <ion-option-button class="button-royal option-button" side="right"
+          <ion-option-button class="button-assertive option-button" side="right"
                              ng-click="checkout(visitor)">
             <i class="icon ion-log-out" style="right: 30px;"></i>
             <span>Checkout</span>
@@ -64,8 +64,8 @@
 </ion-view>
 
 <script id="templates/popover.html" type="text/ng-template">
-  <ion-popover-view>
-    <ion-content>
+  <ion-popover-view class="fit">
+    <ion-content scroll="false">
       <div class="list">
         <ion-checkbox class="checkbox-dark" ng-repeat="filter in filters"
                       ng-model="filter.isChecked">
@@ -78,7 +78,7 @@
 <script id="templates/voip-popup.html" type="text/ng-template">
   <div class="list-borderless">
     <ion-list>
-      <ion-radio ng-repeat="voipService in voipServices"
+      <ion-radio ng-if="voipService.type !== 'Any'" ng-repeat="voipService in voipServices"
                  ng-value="voipService.type"
                  ng-model="defaultVoIPService.type">
         {{ voipService.type }}
@@ -86,6 +86,31 @@
     </ion-list>
   </div>
 </script>
+
+<script id="templates/smsservice-popup.html" type="text/ng-template">
+  <div class="list-borderless">
+    <ion-list>
+      <ion-radio ng-if="smsService.type !== 'Any'" ng-repeat="smsService in smsServices"
+                 ng-value="smsService.type"
+                 ng-model="defaultSMSService.type">
+        {{ smsService.type }}
+      </ion-radio>
+    </ion-list>
+  </div>
+</script>
+
+<script id="templates/contact-popup.html" type="text/ng-template">
+  <div class="list-borderless">
+    <ion-list>
+      <ion-radio ng-repeat="contact in contacts"
+                 ng-value="contact.number"
+                 ng-model="defaultGuest.number">
+        {{ contact.number }}
+      </ion-radio>
+    </ion-list>
+  </div>
+</script>
+
 
 
 

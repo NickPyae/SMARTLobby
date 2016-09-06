@@ -14,9 +14,11 @@
         <div class="input-label">
           VoIP Services
         </div>
-        <select ng-options="item.label for item in items
-            track by item.id"
-                ng-model="selectedItem">
+        <select
+          ng-init="selectedVoIPService"
+          ng-options="item.type for item in voipServices"
+          ng-model="selectedVoIPService"
+          ng-change="onSelectVoIPChange(selectedVoIPService)">
 
         </select>
       </li>
@@ -25,12 +27,13 @@
     <div class="list card">
       <li class="item item-input-inset item-select">
         <div class="input-label">
-          Sites
+          SMS
         </div>
-        <select ng-options="site.siteName for site in sites
-            track by site.id"
-                ng-model="selectedSite">
-
+        <select
+          ng-init="selectedSMS"
+          ng-options="smsService.type for smsService in smsServices"
+          ng-model="selectedSMS"
+          ng-change="onSelectSMSChange(selectedSMS)">
         </select>
       </li>
     </div>

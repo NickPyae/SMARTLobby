@@ -5,23 +5,67 @@
 // the 2nd parameter is an array of 'requires'
 // 'starter.services' is found in factories.js
 // 'starter.controllers' is found in controllers.js
-angular.module('SMARTLobby', ['ionic', 'ionic-toast', 'jett.ionic.filter.bar', 'LocalStorageModule',
+angular.module('SMARTLobby', ['ionic', 'ngCordova','ionic-toast', 'jett.ionic.filter.bar', 'LocalStorageModule',
   'SMARTLobby.controllers', 'SMARTLobby.factories', 'SMARTLobby.services',
   'SMARTLobby.directives', 'SMARTLobby.constants'])
 
-.run(function($ionicPlatform) {
+.run(function($ionicPlatform, $rootScope, $state, $cordovaNetwork, $ionicPopup, APP_CONFIG, localStorageService) {
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
     if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
       cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
       cordova.plugins.Keyboard.disableScroll(true);
-
     }
+
     if (window.StatusBar) {
       // org.apache.cordova.statusbar required
       StatusBar.styleDefault();
     }
+
+    // Allow android hardware back button only when current state is not login.
+    // Otherwise exit app upon back button click.
+    $ionicPlatform.registerBackButtonAction(function(event){
+      if($state.current.name === 'login') {
+        ionic.Platform.exitApp();
+      } else {
+        navigator.app.backHistory();
+      }
+    }, 100);
+
+
+    // Init App
+    initApp();
+
+    function initApp() {
+
+      if(!localStorageService.get(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE) && !localStorageService.get(APP_CONFIG.SMS_SERVICE.SELECTED_SERVICE))  {
+        localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, APP_CONFIG.VOIP_SERVICE.ANY);
+        localStorageService.set(APP_CONFIG.SMS_SERVICE.SELECTED_SMS, APP_CONFIG.SMS_SERVICE.ANY);
+        console.log('localStorageService init');
+      }
+
+      console.log('initApp ready');
+    }
+
+    document.addEventListener('deviceready', function () {
+
+      // listen for Offline event
+      $rootScope.$on('$cordovaNetwork:offline', function(event, networkState){
+        $ionicPopup.show({
+          title: 'Connection Error',
+          template: 'Unable to connect to server. Please check your internet connection or VPN and try again.',
+          buttons: [
+            {
+              text: 'OK',
+              type: 'button-dark'
+            }
+          ]
+        });
+      });
+
+    }, false);
+
   });
 })
 
@@ -83,7 +127,7 @@ angular.module('SMARTLobby', ['ionic', 'ionic-toast', 'jett.ionic.filter.bar', '
 
   .state('tab.visitors', {
       url: '/visitors',
-      cache: true, // do not refresh UI state
+      cache: false,
       views: {
         'tab-visitors': {
           templateUrl: 'templates/tab-visitors.html',

@@ -57,7 +57,7 @@ angular.module('SMARTLobby.directives', [])
       }
     };
   })
-  .directive('pieChartComponent', function (ContactStatusService, $state) {
+  .directive('pieChartComponent', function (APP_CONFIG, ContactStatusService, $state) {
     return {
       link: function (scope, element, attrs) {
 
@@ -65,13 +65,9 @@ angular.module('SMARTLobby.directives', [])
           type: 'pie',
           data: {
             labels: [
-              APP_CONFIG.CONTACT_STATUS.UNCONTACTED,
-              APP_CONFIG.CONTACT_STATUS.NO_REPLY,
-              APP_CONFIG.CONTACT_STATUS.VACATING,
-              APP_CONFIG.CONTACT_STATUS.EVACUATED
             ],
             datasets: [{
-              data: [40, 12, 20, 21],
+              data: [],
               backgroundColor: [
                 '#454242', //Gray
                 '#FF0000', //Red
@@ -87,7 +83,7 @@ angular.module('SMARTLobby.directives', [])
             }]
           },
           options: {
-            responsive: true,
+            responsive: false, // Setting true will break pie chart on iOS UIWebView
             tooltips: {
               enabled: true,
             },
@@ -103,97 +99,126 @@ angular.module('SMARTLobby.directives', [])
           }
         };
 
+        scope.$on('updatePieChart', function (event, args) {
 
-        var pieChartCanvas = document.getElementById('pieChart').getContext('2d');
-        var pieChart = new Chart(pieChartCanvas, pieChartConfig);
+          // Clearing data before adding new labels
+          pieChartConfig.data.labels = [];
 
-        Chart.pluginService.register({
-          afterDraw: function (chart, easing) {
-            if (chart.config.options.showNumberOnSlice || chart.config.options.showLabel) {
-              var self = chart.config;
-              var ctx = chart.chart.ctx;
+          // Clearing all the data before adding new data again
+          angular.forEach(pieChartConfig.data.datasets, function(sets) {
+              sets.data = [];
+          });
 
-              ctx.font = '30px Oxygen';
-              ctx.textAlign = 'center';
-              ctx.fillStyle = '#fff';
+          pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.UNCONTACTED);
+          pieChartConfig.data.datasets[0].data.push(ContactStatusService.getUncontactedCount());
+          pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.NO_REPLY);
+          pieChartConfig.data.datasets[0].data.push(ContactStatusService.getNoReplyCount());
 
-              self.data.datasets.forEach(function (dataset, datasetIndex) {
-                var total = 0, //total values to compute fraction
-                  labelxy = [],
-                  offset = Math.PI / 2, //start sector from top
-                  radius,
-                  centerx,
-                  centery,
-                  lastend = 0; //prev arc's end line: starting with 0
+          if(args === APP_CONFIG.MODE.DEFAULT) {
+            pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.IN_BUILDING);
+            pieChartConfig.data.datasets[0].data.push(ContactStatusService.getInBuildingCount());
+            pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.LEFT_BUILDING);
+            pieChartConfig.data.datasets[0].data.push(ContactStatusService.getLeftBuildingCount());
+          } else {
+            pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.VACATING);
+            pieChartConfig.data.datasets[0].data.push(ContactStatusService.getVacatingCount());
+            pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.EVACUATED);
+            pieChartConfig.data.datasets[0].data.push(ContactStatusService.getEvacuatedCount());
+          }
 
-                //for (var val of dataset.data) { total += val; }
+          var pieChartCanvas = document.getElementById('pieChart').getContext('2d');
+          pieChartCanvas.canvas.width = 350; // Due to responsive false, absolute width is provided in order to resize
+          pieChartCanvas.canvas.height = 350; // Due to responsive false, absolute height is provided in order to resize
+          var pieChart = new Chart(pieChartCanvas, pieChartConfig);
 
-                for (val = 0; val < dataset.data.length; val++) {
-                  total += dataset.data[val];
-                }
+          Chart.pluginService.register({
+            afterDraw: function (chart, easing) {
+              if (chart.config.options.showNumberOnSlice || chart.config.options.showLabel) {
+                var self = chart.config;
+                var ctx = chart.chart.ctx;
 
-                //TODO needs improvement
-                var i = 0;
-                var meta = dataset._meta[i];
-                while (!meta) {
-                  i++;
-                  meta = dataset._meta[i];
-                }
+                ctx.font = '30px Arial Bold';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#fff';
 
-                var element;
-                for (index = 0; index < meta.data.length; index++) {
+                self.data.datasets.forEach(function (dataset, datasetIndex) {
+                  var total = 0, //total values to compute fraction
+                    labelxy = [],
+                    offset = Math.PI / 2, //start sector from top
+                    radius,
+                    centerx,
+                    centery,
+                    lastend = 0; //prev arc's end line: starting with 0
 
-                  element = meta.data[index];
-                  radius = 0.9 * element._view.outerRadius - element._view.innerRadius;
-                  centerx = element._model.x;
-                  centery = element._model.y;
-                  var thispart = dataset.data[index],
-                    arcsector = Math.PI * (2 * thispart / total);
-                  if (element.hasValue() && dataset.data[index] > 0) {
-                    labelxy.push(lastend + arcsector / 2 + Math.PI + offset);
+                  //for (var val of dataset.data) { total += val; }
+
+                  for (val = 0; val < dataset.data.length; val++) {
+                    total += dataset.data[val];
                   }
-                  else {
-                    labelxy.push(-1);
+
+                  //TODO needs improvement
+                  var i = 0;
+                  var meta = dataset._meta[i];
+                  while (!meta) {
+                    i++;
+                    meta = dataset._meta[i];
                   }
-                  lastend += arcsector;
-                }
+
+                  var element;
+                  for (index = 0; index < meta.data.length; index++) {
+
+                    element = meta.data[index];
+                    radius = 0.9 * element._view.outerRadius - element._view.innerRadius;
+                    centerx = element._model.x;
+                    centery = element._model.y;
+                    var thispart = dataset.data[index],
+                      arcsector = Math.PI * (2 * thispart / total);
+                    if (element.hasValue() && dataset.data[index] > 0) {
+                      labelxy.push(lastend + arcsector / 2 + Math.PI + offset);
+                    }
+                    else {
+                      labelxy.push(-1);
+                    }
+                    lastend += arcsector;
+                  }
 
 
-                var lradius = radius * 3 / 4;
-                for (var idx in labelxy) {
-                  if (labelxy[idx] === -1) continue;
-                  var langle = labelxy[idx],
-                    dx = centerx + lradius * Math.cos(langle),
-                    dy = centery + lradius * Math.sin(langle),
-                    val = Math.round(dataset.data[idx] / total * 100);
-                  if (chart.config.options.showNumberOnSlice)
-                    ctx.fillText(dataset.data[idx], dx, dy);
-                  else
-                    ctx.fillText(chart.config.data.labels[idx], dx, dy);
-                }
-                ctx.restore();
-              });
+                  var lradius = radius * 3 / 4;
+                  for (var idx in labelxy) {
+                    if (labelxy[idx] === -1) continue;
+                    var langle = labelxy[idx],
+                      dx = centerx + lradius * Math.cos(langle),
+                      dy = centery + lradius * Math.sin(langle),
+                      val = Math.round(dataset.data[idx] / total * 100);
+                    if (chart.config.options.showNumberOnSlice)
+                      ctx.fillText(dataset.data[idx], dx, dy);
+                    else
+                      ctx.fillText(chart.config.data.labels[idx], dx, dy);
+                  }
+                  ctx.restore();
+                });
+              }
+            }
+          });
+
+          document.getElementById('pieChart').onclick = function(evt)
+          {
+            var activePoints = pieChart.getElementsAtEvent(evt);
+
+            if(activePoints.length > 0)
+            {
+              //get the internal index of slice in pie chart
+              var clickedElementindex = activePoints[0]['_index'];
+
+              //get specific label by index
+              var label = pieChart.data.labels[clickedElementindex];
+
+              ContactStatusService.setContactStatus(label);
+
+              $state.go('tab.visitors');
             }
           }
         });
-
-        document.getElementById('pieChart').onclick = function(evt)
-        {
-          var activePoints = pieChart.getElementsAtEvent(evt);
-
-          if(activePoints.length > 0)
-          {
-            //get the internal index of slice in pie chart
-            var clickedElementindex = activePoints[0]['_index'];
-
-            //get specific label by index
-            var label = pieChart.data.labels[clickedElementindex];
-
-            ContactStatusService.setContactStatus(label);
-
-            $state.go('tab.visitors');
-          }
-        }
 
       }
     };
@@ -202,17 +227,13 @@ angular.module('SMARTLobby.directives', [])
     return {
       link: function (scope, element, attrs) {
 
-        var randomScalingFactor = function () {
-          return Math.round(Math.random() * 100);
-        };
-
         var comboChartData = {
-          labels: ['Before 9am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm', '6pm', 'After 7pm'],
+          labels: [],
           datasets: [{
             type: 'bar',
             label: 'In-building',
             backgroundColor: '#396191',
-            data: [randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), 80],
+            data: [],
             borderColor: '#396191',
             pointBorderWidth: 2,
             pointBorderColor: '#396191',
@@ -222,7 +243,7 @@ angular.module('SMARTLobby.directives', [])
             type: 'line',
             label: 'Checked-in',
             backgroundColor: '#604C7B',
-            data: [randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), 150],
+            data: [],
             borderColor: '#604C7B',
             pointBorderWidth: 5,
             pointBorderColor: '#604C7B',
@@ -238,7 +259,7 @@ angular.module('SMARTLobby.directives', [])
               type: 'bar',
               label: 'Checked-out',
               backgroundColor: '#CBC7CC',
-              data: [randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor()],
+              data: [],
               borderColor: '#CBC7CC',
               pointBorderWidth: 2,
               pointBorderColor: '#CBC7CC',
@@ -247,46 +268,71 @@ angular.module('SMARTLobby.directives', [])
             }]
         };
 
-        var comboChartCanvas = document.getElementById('comboChart').getContext('2d');
-        var comboChart = new Chart(comboChartCanvas, {
-          type: 'bar',
-          data: comboChartData,
-          options: {
-            responsive: true,
-            hoverMode: 'label',
-            hoverAnimationDuration: 400,
-            legend: {
-              position: 'top',
-              labels: {
-                fontSize: 9
+        scope.$on('updateComboChart', function (event, args) {
+          // Clearing all the data before adding new data again
+          comboChartData.labels = [];
+
+          // Clearing all the data before adding new data again
+          angular.forEach(comboChartData.datasets, function(sets) {
+            sets.data = [];
+          });
+
+          angular.forEach(args.siteDetails, function(site) {
+
+            // Labels
+            comboChartData.labels.push(site.key);
+            // In Building
+            comboChartData.datasets[0].data.push(site.inBuildingVisitor);
+
+            // Checked-in
+            comboChartData.datasets[1].data.push(site.checkin);
+
+            // Checked-out
+            comboChartData.datasets[2].data.push(site.checkout);
+
+            var comboChartCanvas = document.getElementById('comboChart').getContext('2d');
+            var comboChart = new Chart(comboChartCanvas, {
+              type: 'bar',
+              data: comboChartData,
+              options: {
+                responsive: true,
+                hoverMode: 'label',
+                hoverAnimationDuration: 400,
+                legend: {
+                  position: 'top',
+                  labels: {
+                    fontSize: 9
+                  }
+                },
+                tooltips: {
+                  mode: 'label'
+                },
+                scales: {
+                  xAxes: [{
+                    display: true,
+                    scaleLabel: {
+                      display: true,
+                      labelString: 'Time at Site ' + '(' + new Date().toLocaleString() + ')'
+                    }
+                  }],
+                  yAxes: [{
+                    display: true,
+                    scaleLabel: {
+                      display: true,
+                      labelString: 'Number of Visitors'
+                    }
+                  }]
+                },
+                title: {
+                  display: true,
+                  text: 'Daily Visitor Checkin/out Momentum'
+                }
               }
-            },
-            tooltips: {
-              mode: 'label'
-            },
-            scales: {
-              xAxes: [{
-                display: true,
-                scaleLabel: {
-                  display: true,
-                  labelString: 'Time at Site ' + '(' + new Date().toLocaleString() + ')'
-                }
-              }],
-              yAxes: [{
-                display: true,
-                scaleLabel: {
-                  display: true,
-                  labelString: 'Number of Visitors'
-                }
-              }]
-            },
-            title: {
-              display: true,
-              text: 'Daily Visitor Checkin/out Momentum'
-            }
-          }
+            });
+          });
         });
       }
     };
+
   })
 

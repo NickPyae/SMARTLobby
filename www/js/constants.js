@@ -23,12 +23,19 @@ var APP_CONFIG =
     SKYPE: 'Skype',
     JABBER: 'Cisco Jabber',
     SKYPE_URL_SCHEME: 'skype:live:skype.',
-    JABBER_URL_SCHEME: 'ciscotel://'
+    JABBER_URL_SCHEME: 'ciscotel://',
+    SELECTED_SERVICE: 'SELECTED_SERVICE',
+    ANY: 'Any'
   },
-  SERVICE: {
-    GET_VISITORS: 'getAllVisitors'
+  SMS_SERVICE: {
+    DEFAULT: 'Default Messaging',
+    WHATSAPP: 'WhatsApp',
+    SELECTED_SMS: 'SELECTED_SMS',
+    ANY: 'Any'
   },
-  BASE_URL: 'http://192.168.1.121/smartlobby/mobile/'
+  BASE_URI: 'http://192.168.1.179:9999/',
+  GET_VISITORS: 'API/WebAPI.aspx?m=mhello',
+  GET_STATS: 'API/WebApi.aspx?m=mhello_dash'
 };
 
 angular.module('SMARTLobby.constants', []).
