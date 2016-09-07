@@ -1,17 +1,43 @@
 angular.module('SMARTLobby.controllers', [])
 
-  .controller('LoginCtrl', function ($scope, $state, APP_CONFIG, localStorageService) {
-    $scope.ip = '192.168.1.179:9999';
+  .controller('LoginCtrl', function ($scope, $state, APP_CONFIG, localStorageService, MaskFactory, AuthFactory) {
 
-    $scope.login = function () {
-      initApp();
+    if(localStorageService.get(APP_CONFIG.BASE_IP)) {
+      $scope.ip = localStorageService.get(APP_CONFIG.BASE_IP);
+    } else {
+      $scope.ip = '192.168.1.179';
+    }
 
-      $state.go('tab.visitors');
+    $scope.enableHTTPS = {
+      checked: false
+    };
+
+    $scope.login = function (user, pw, ip, enableHTTPS) {
+      MaskFactory.loadingMask(true, 'Loading');
+
+      AuthFactory.authServer(ip, enableHTTPS.checked).then(function(data) {
+
+        if(data.auth) {
+          initApp();
+
+          localStorageService.set(APP_CONFIG.BASE_IP, ip);
+          localStorageService.set(APP_CONFIG.IS_HTTPS, enableHTTPS.checked);
+
+          MaskFactory.loadingMask(false);
+
+          $state.go('tab.visitors');
+        }
+
+      }, function(error) {
+        MaskFactory.loadingMask(false);
+        MaskFactory.showMask(MaskFactory.error, 'Error logging in.');
+      });
+
+
     };
 
     function initApp() {
       if(!localStorageService.get(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE) && !localStorageService.get(APP_CONFIG.SMS_SERVICE.SELECTED_SERVICE)) {
-        console.log('localStorageService empty. initApp');
         localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, APP_CONFIG.VOIP_SERVICE.ANY);
         localStorageService.set(APP_CONFIG.SMS_SERVICE.SELECTED_SMS, APP_CONFIG.SMS_SERVICE.ANY);
       } else {
@@ -34,6 +60,7 @@ angular.module('SMARTLobby.controllers', [])
     }, false);
 
     $scope.$on('$ionicView.beforeEnter', function (event, data) {
+
       if (!AppModeService.getMode()) {
         $scope.mode = APP_CONFIG.MODE.DEFAULT;
       } else {
@@ -47,9 +74,10 @@ angular.module('SMARTLobby.controllers', [])
       $rootScope.$broadcast('updatePieChart', $scope.mode);
     });
 
-    $scope.sites = [];
-
     function getAllStats() {
+
+      $scope.sites = [];
+
       MaskFactory.loadingMask(true, 'Loading');
 
       StatsFactory.getAllStats().then(function (data) {
@@ -199,7 +227,6 @@ angular.module('SMARTLobby.controllers', [])
 
       TimerService.setTimer({timer: $scope.timer, sec: $scope.sec});
     };
-
   })
 
   .controller('VisitorsCtrl', function ($rootScope, $scope, $state, VisitorsFactory,
@@ -212,16 +239,13 @@ angular.module('SMARTLobby.controllers', [])
                                         AppModeService, AppColorThemeService,
                                         MaskFactory, $cordovaNetwork, $ionicScrollDelegate) {
 
-
     document.addEventListener('deviceready', function () {
       // listen for Online event
       $rootScope.$on('$cordovaNetwork:online', function (event, networkState) {
         // Getting all visitors from web service
         getAllVisitors();
       });
-
     }, false);
-
 
     $scope.$on('$ionicView.beforeEnter', function (event, data) {
       console.log(APP_CONFIG);
@@ -253,12 +277,6 @@ angular.module('SMARTLobby.controllers', [])
       // Getting all visitors from web service
       getAllVisitors();
     });
-
-    $scope.groups = [];
-    $scope.visitors = [];
-    $scope.allVisitors = [];
-
-    $scope.searchResult = '';
 
     $scope.toggleGroup = function (group) {
       group.isShown = !group.isShown;
@@ -536,31 +554,40 @@ angular.module('SMARTLobby.controllers', [])
       TimerService.setTimer({timer: $scope.timer, sec: $scope.sec});
     }
 
-    // For updating visitor status options
-    $scope.defaultContactStatus = {
-      status: APP_CONFIG.CONTACT_STATUS.UNCONTACTED
-    };
+    // Filtering visitor list depending on checkbox filter options
+    watchFilterChanges();
 
     function filterVisitorsByStatus(status) {
       if (status) {
         angular.forEach($scope.filters, function (filter) {
-          if (filter.status.toLowerCase() === status.toLowerCase()) {
+          if (filter.status === status) {
             filter.isChecked = true;
           } else {
             filter.isChecked = false;
           }
         });
+
+        ContactStatusService.setContactStatus(null);
       }
     }
 
+    // For updating visitor status options
+    $scope.defaultContactStatus = {
+      status: APP_CONFIG.CONTACT_STATUS.UNCONTACTED
+    };
+
     function getAllVisitors() {
+
+      $scope.groups = [];
+      $scope.visitors = [];
+      $scope.searchResult = '';
+
       MaskFactory.loadingMask(true, 'Loading');
 
       VisitorsFactory.getAllVisitors().then(function (visitors) {
         var sortedVisitors = sortVisitorsByName(visitors);
 
         $scope.visitors = sortedVisitors;
-        $scope.allVisitors = sortedVisitors;
 
         if (visitors && visitors.length) {
           groupVisitorsByHostName(sortedVisitors);
@@ -589,22 +616,17 @@ angular.module('SMARTLobby.controllers', [])
         .value();
 
       $scope.groups = sortVisitorsByName(visitorGroups);
-
-      console.log('Visitors after group by host name: ');
-      console.log($scope.groups);
     }
-
-    // Filtering visitor list depending on checkbox filter options
-    watchFilterChanges();
 
     function watchFilterChanges() {
       $scope.$watch('filters', function (filters) {
+
         var filterVisitors = [];
 
         angular.forEach(filters, function (filter) {
           if (filter.isChecked) {
-            angular.forEach($scope.allVisitors, function (visitor) {
-              if (filter.status.toLowerCase() === visitor.contactStatus.toLowerCase()) {
+            angular.forEach($scope.visitors, function (visitor) {
+              if (filter.status === visitor.contactStatus) {
                 filterVisitors.push(visitor);
               }
             });
@@ -750,6 +772,13 @@ angular.module('SMARTLobby.controllers', [])
       $rootScope.$broadcast('visitorStatusHasUpdated');
     };
 
+    $scope.closeModal = function() {
+      $scope.modal.remove()
+        .then(function () {
+          $scope.modal = null;
+        });
+    };
+
     $scope.showFilterBar = function () {
       $ionicFilterBar.show({
         items: $scope.visitors,
@@ -809,44 +838,7 @@ angular.module('SMARTLobby.controllers', [])
 
     // Being called every time user switches tab
     $rootScope.$on('$stateChangeStart', function () {
-      var uncontactedCount = 0;
-      var noReplyCount = 0;
-      var inBuildingCount = 0;
-      var leftBuildingCount = 0;
-      var vacatingCount = 0;
-      var evacuatedCount = 0;
-
-      angular.forEach($scope.visitors, function(visitor) {
-          if(visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.UNCONTACTED) {
-            uncontactedCount++;
-            ContactStatusService.setUncontactedCount(uncontactedCount);
-          }
-
-          if(visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.NO_REPLY) {
-            noReplyCount++;
-            ContactStatusService.setNoReplyCount(noReplyCount);
-          }
-
-          if(visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.IN_BUILDING) {
-            inBuildingCount++;
-            ContactStatusService.setInBuildingCount(inBuildingCount);
-          }
-
-          if(visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.LEFT_BUILDING) {
-            leftBuildingCount++;
-            ContactStatusService.setLeftBuildingCount(leftBuildingCount);
-          }
-
-          if(visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.VACATING) {
-            vacatingCount++;
-            ContactStatusService.setVacatingCount(vacatingCount);
-          }
-
-          if(visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.EVACUATED) {
-            evacuatedCount++;
-            ContactStatusService.setEvacuatedCount(evacuatedCount);
-          }
-      });
+        ContactStatusService.setVisitors($scope.visitors);
     });
 
   })
@@ -1202,7 +1194,33 @@ angular.module('SMARTLobby.controllers', [])
 
   })
 
-  .controller('AccountSettingsCtrl', function ($scope, $state) {
+  .controller('AccountSettingsCtrl', function ($scope, $state, APP_CONFIG, localStorageService, MaskFactory, AuthFactory) {
 
+    $scope.user = {};
+    $scope.user.server = localStorageService.get(APP_CONFIG.BASE_IP);
+    $scope.user.checked = localStorageService.get(APP_CONFIG.IS_HTTPS);
 
+    $scope.saveSettings = function(server, isHTTPS) {
+
+      MaskFactory.loadingMask(true, 'Loading');
+
+      AuthFactory.authServer(server, isHTTPS).then(function(data) {
+
+        if(data.auth) {
+          localStorageService.set(APP_CONFIG.BASE_IP, server);
+          localStorageService.set(APP_CONFIG.IS_HTTPS, isHTTPS);
+
+          MaskFactory.loadingMask(false);
+          MaskFactory.showMask(MaskFactory.success, 'Settings saved.');
+        }
+
+      }, function(error) {
+         $scope.user.server = localStorageService.get(APP_CONFIG.BASE_IP);
+         $scope.user.checked = localStorageService.get(APP_CONFIG.IS_HTTPS);
+
+         MaskFactory.loadingMask(false);
+         MaskFactory.showMask(MaskFactory.error, 'Error saving settings.');
+      });
+
+    };
   });

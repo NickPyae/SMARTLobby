@@ -34,6 +34,9 @@ var APP_CONFIG =
     ANY: 'Any'
   },
   BASE_URI: 'http://192.168.1.179:9999/',
+  BASE_IP: 'BASE_IP',
+  PORT: ':9999',
+  IS_HTTPS: 'IS_HTTPS',
   GET_VISITORS: 'API/WebAPI.aspx?m=mhello',
   GET_STATS: 'API/WebApi.aspx?m=mhello_dash'
 };

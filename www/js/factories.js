@@ -1,6 +1,6 @@
 angular.module('SMARTLobby.factories', [])
 
-  .factory('VisitorsFactory', function ($q, $http, APP_CONFIG) {
+  .factory('VisitorsFactory', function ($q, $http, APP_CONFIG, localStorageService) {
 
     function Visitor(guest_contact_1, guest_contact_2, guest_checkInDateTime,
                      guest_image, guest_name, guest_organization,
@@ -33,11 +33,15 @@ angular.module('SMARTLobby.factories', [])
 
     return {
       getAllVisitors: function () {
-        $http.jsonp(APP_CONFIG.BASE_URI + APP_CONFIG.GET_VISITORS + '&callback=JSON_CALLBACK').
+
+        var ip = localStorageService.get(APP_CONFIG.BASE_IP);
+        var port = APP_CONFIG.PORT;
+
+        var http = localStorageService.get(APP_CONFIG.IS_HTTPS) ? 'https': 'http';
+
+        $http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '&callback=JSON_CALLBACK').
           success(function (data, status, headers, config) {
-        //$http.get('/test/visitors-list.json').
-        //  success(function (data, status, headers, config) {
-            console.log('JSON from ' + APP_CONFIG.BASE_URI + APP_CONFIG.GET_VISITORS + '\t' + JSON.stringify(data));
+            console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '\t' + JSON.stringify(data));
 
             var visitors = [];
 
@@ -50,16 +54,6 @@ angular.module('SMARTLobby.factories', [])
               visitors.push(v);
             });
 
-            // To test with /test/visitors-list.json
-            //angular.forEach(data.v, function (visitor) {
-            //
-            //  var v = new Visitor(visitor.g.c1, visitor.g.c2, visitor.g.ci, visitor.g.img, visitor.g.n, visitor.g.o,
-            //    visitor.h.c1, visitor.h.c2, visitor.h.ci, visitor.h.img, visitor.h.n, visitor.h.o,
-            //    visitor.sr);
-            //
-            //  visitors.push(v);
-            //});
-
             defer.resolve(visitors);
           })
           .error(function (err) {
@@ -70,7 +64,7 @@ angular.module('SMARTLobby.factories', [])
       }
     };
   })
-  .factory('StatsFactory', function ($http, $q, APP_CONFIG) {
+  .factory('StatsFactory', function ($http, $q, APP_CONFIG, localStorageService) {
 
     function Site(off, siteId, siteName, tActiveHost, tCin, tOnSite) {
       this.timeAtSite = off;
@@ -88,15 +82,21 @@ angular.module('SMARTLobby.factories', [])
       this.key = key;
       this.siteId = siteId;
       this.inBuildingVisitor = tOnSite;
-    };
+    }
 
     var defer = $q.defer();
 
     return {
       getAllStats: function () {
-        $http.jsonp(APP_CONFIG.BASE_URI + APP_CONFIG.GET_STATS + '&callback=JSON_CALLBACK').
+
+        var ip = localStorageService.get(APP_CONFIG.BASE_IP);
+        var port = APP_CONFIG.PORT;
+
+        var http = localStorageService.get(APP_CONFIG.IS_HTTPS) ? 'https': 'http';
+
+        $http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.GET_STATS + '&callback=JSON_CALLBACK').
           success(function (data, status, headers, config) {
-            console.log('JSON from ' + APP_CONFIG.BASE_URI + APP_CONFIG.GET_STATS + '\t' + JSON.stringify(data));
+            console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.GET_STATS + '\t' + JSON.stringify(data));
 
             var siteList = [];
             var siteDetailsList = [];
@@ -136,6 +136,27 @@ angular.module('SMARTLobby.factories', [])
       }
     }
 
+  })
+  .factory('AuthFactory', function($http, $q) {
+      return {
+          authServer: function(ip, isHTTPS) {
+            var defer = $q.defer();
+
+            var port = APP_CONFIG.PORT;
+
+            var http = isHTTPS ? 'https': 'http';
+
+            $http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.GET_STATS + '&callback=JSON_CALLBACK').
+            success(function (data, status, headers, config) {
+                defer.resolve({auth: true});
+            })
+            .error(function(error) {
+              defer.reject({auth: false});
+            })
+
+            return defer.promise;
+          }
+      };
   })
   .factory('TimerFactory', function ($http, $q) {
     var deferred = $q.defer();

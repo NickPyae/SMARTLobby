@@ -2,8 +2,8 @@
     <ion-header-bar class="bar-dark">
       <h1 class="title">Updating visitor status</h1>
       <button class="button button-outline button-light"
-              ng-click="updateVisitorStatus(contactStatus.isChecked)">
-        Update
+              ng-click="closeModal()">
+        Close
       </button>
     </ion-header-bar>
     <ion-content has-bouncing="false">
@@ -13,14 +13,16 @@
                    ng-model="defaultContactStatus.status">
           {{ contactStatus.status }}
         </ion-radio>
-        <!--<div class="item item-input-inset item-dark">-->
+        <div class="item item-divider dark-bg">
           <!--<label class="item-input-wrapper">-->
             <!--<input type="text" placeholder="Remarks">-->
           <!--</label>-->
-          <!--<button class="button button-outline button-light" ng-click="updateVisitorStatus(contactStatus.isChecked)">-->
-            <!--Update-->
-          <!--</button>-->
-        <!--</div>-->
+          <button class="button button-small button-outline button-light"
+                  style=" float: right;"
+                  ng-click="updateVisitorStatus(contactStatus.isChecked)">
+            Update
+          </button>
+        </div>
       </div>
     </ion-content>
 </div>

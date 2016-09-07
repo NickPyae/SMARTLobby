@@ -17,7 +17,6 @@
     <preference name="FadeSplashScreen" value="false" />
     <preference name="ShowSplashScreenSpinner" value="false" />
     <preference name="deployment-target" value="8.4" />
-    <preference name="android-minSdkVersion" value="18" />
     <preference name="android-maxSdkVersion" value="22" />
     <preference name="orientation" value="portrait" />
     <feature name="StatusBar">

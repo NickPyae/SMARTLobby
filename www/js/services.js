@@ -161,13 +161,7 @@ angular.module('SMARTLobby.services', [])
   })
   .service('ContactStatusService', function () {
     this.contactStatus = null;
-
-    this.uncontactedCount = 0;
-    this.noReplyCount = 0;
-    this.inBuildingCount = 0;
-    this.leftBuildingCount = 0;
-    this.vacatingCount = 0;
-    this.evacuatedCount = 0;
+    this.visitors = [];
 
     this.getContactStatus = function () {
       return this.contactStatus;
@@ -177,53 +171,14 @@ angular.module('SMARTLobby.services', [])
       this.contactStatus = contactStatus;
     };
 
-    this.getUncontactedCount = function () {
-      return this.uncontactedCount;
+    this.getVisitors = function() {
+      return this.visitors;
     };
 
-    this.getNoReplyCount = function () {
-      return this.noReplyCount;
+    this.setVisitors = function(visitors) {
+      this.visitors = visitors;
     };
 
-    this.getInBuildingCount = function() {
-      return this.inBuildingCount;
-    };
-
-    this.getLeftBuildingCount = function() {
-      return this.leftBuildingCount;
-    };
-
-    this.getVacatingCount = function () {
-      return this.vacatingCount;
-    };
-
-    this.getEvacuatedCount = function () {
-      return this.evacuatedCount;
-    };
-
-    this.setUncontactedCount = function (count) {
-      this.uncontactedCount = count;
-    };
-
-    this.setNoReplyCount = function (count) {
-      this.noReplyCount = count;
-    };
-
-    this.setInBuildingCount = function(count) {
-      this.inBuildingCount = count;
-    };
-
-    this.setLeftBuildingCount = function(count) {
-      this.leftBuildingCount = count;
-    };
-
-    this.setVacatingCount = function (count) {
-      this.vacatingCount = count;
-    };
-
-    this.setEvacuatedCount = function (count) {
-      this.evacuatedCount = count;
-    };
   })
   .service('TimerService', function () {
     this.timer = {};

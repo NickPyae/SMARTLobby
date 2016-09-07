@@ -1,10 +1,10 @@
 angular.module('SMARTLobby.directives', [])
-  .directive('visitorComponent',function() {
+  .directive('visitorComponent', function () {
     return {
       templateUrl: 'templates/visitor-component.html'
     };
   })
-  .directive('visitorDividerComponent',function() {
+  .directive('visitorDividerComponent', function () {
     return {
       templateUrl: 'templates/visitor-divider-component.html'
     };
@@ -64,8 +64,7 @@ angular.module('SMARTLobby.directives', [])
         var pieChartConfig = {
           type: 'pie',
           data: {
-            labels: [
-            ],
+            labels: [],
             datasets: [{
               data: [],
               backgroundColor: [
@@ -105,25 +104,48 @@ angular.module('SMARTLobby.directives', [])
           pieChartConfig.data.labels = [];
 
           // Clearing all the data before adding new data again
-          angular.forEach(pieChartConfig.data.datasets, function(sets) {
-              sets.data = [];
+          angular.forEach(pieChartConfig.data.datasets, function (sets) {
+            sets.data = [];
+          });
+
+          var unCountactedCount = 0;
+          var noReplyCount = 0;
+          var inBuildingCount = 0;
+          var leftBuildingCount = 0;
+          var vacatingCount = 0;
+          var evacuatedCount = 0;
+
+          angular.forEach(ContactStatusService.getVisitors(), function (visitor) {
+            if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.UNCONTACTED) {
+              unCountactedCount++;
+            } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.NO_REPLY) {
+              noReplyCount++;
+            } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.IN_BUILDING) {
+              inBuildingCount++;
+            } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.LEFT_BUILDING) {
+              leftBuildingCount++;
+            } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.VACATING) {
+              vacatingCount++;
+            } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.EVACUATED) {
+              evacuatedCount++;
+            }
           });
 
           pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.UNCONTACTED);
-          pieChartConfig.data.datasets[0].data.push(ContactStatusService.getUncontactedCount());
+          pieChartConfig.data.datasets[0].data.push(unCountactedCount);
           pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.NO_REPLY);
-          pieChartConfig.data.datasets[0].data.push(ContactStatusService.getNoReplyCount());
+          pieChartConfig.data.datasets[0].data.push(noReplyCount);
 
-          if(args === APP_CONFIG.MODE.DEFAULT) {
+          if (args === APP_CONFIG.MODE.DEFAULT) {
             pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.IN_BUILDING);
-            pieChartConfig.data.datasets[0].data.push(ContactStatusService.getInBuildingCount());
+            pieChartConfig.data.datasets[0].data.push(inBuildingCount);
             pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.LEFT_BUILDING);
-            pieChartConfig.data.datasets[0].data.push(ContactStatusService.getLeftBuildingCount());
+            pieChartConfig.data.datasets[0].data.push(leftBuildingCount);
           } else {
             pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.VACATING);
-            pieChartConfig.data.datasets[0].data.push(ContactStatusService.getVacatingCount());
+            pieChartConfig.data.datasets[0].data.push(vacatingCount);
             pieChartConfig.data.labels.push(APP_CONFIG.CONTACT_STATUS.EVACUATED);
-            pieChartConfig.data.datasets[0].data.push(ContactStatusService.getEvacuatedCount());
+            pieChartConfig.data.datasets[0].data.push(evacuatedCount);
           }
 
           var pieChartCanvas = document.getElementById('pieChart').getContext('2d');
@@ -201,12 +223,10 @@ angular.module('SMARTLobby.directives', [])
             }
           });
 
-          document.getElementById('pieChart').onclick = function(evt)
-          {
+          document.getElementById('pieChart').onclick = function (evt) {
             var activePoints = pieChart.getElementsAtEvent(evt);
 
-            if(activePoints.length > 0)
-            {
+            if (activePoints.length > 0) {
               //get the internal index of slice in pie chart
               var clickedElementindex = activePoints[0]['_index'];
 
@@ -273,11 +293,11 @@ angular.module('SMARTLobby.directives', [])
           comboChartData.labels = [];
 
           // Clearing all the data before adding new data again
-          angular.forEach(comboChartData.datasets, function(sets) {
+          angular.forEach(comboChartData.datasets, function (sets) {
             sets.data = [];
           });
 
-          angular.forEach(args.siteDetails, function(site) {
+          angular.forEach(args.siteDetails, function (site) {
 
             // Labels
             comboChartData.labels.push(site.key);

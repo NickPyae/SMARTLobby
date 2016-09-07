@@ -3,23 +3,23 @@
         Account Settings
     </ion-nav-title>
     <ion-nav-buttons side="right">
-      <button class="button button-outline button-light" ng-click="saveSettings()">
+      <button class="button button-outline button-light" ng-click="saveSettings(user.server, user.checked)">
         Save
       </button>
     </ion-nav-buttons>
     <ion-content has-bouncing="false">
         <div class="list card">
                 <ion-list>
+                    <!--<label class="item item-input">-->
+                        <!--<span class="input-label">User Name</span>-->
+                        <!--<input type="text" ng-model="user.username">-->
+                    <!--</label>-->
+                    <!--<label class="item item-input">-->
+                        <!--<span class="input-label" >Password</span>-->
+                        <!--<input type="password" ng-model="user.password">-->
+                    <!--</label>-->
                     <label class="item item-input">
-                        <span class="input-label">User Name</span>
-                        <input type="text" ng-model="user.username">
-                    </label>
-                    <label class="item item-input">
-                        <span class="input-label" >Password</span>
-                        <input type="password" ng-model="user.password">
-                    </label>
-                    <label class="item item-input">
-                        <span class="input-label" >URL</span>
+                        <span class="input-label" >IP</span>
                         <input type="text" ng-model="user.server">
                     </label>
                     <label class="item item-input assertive msg-validation" ng-show="validated === false">
@@ -27,7 +27,7 @@
                     </label>
                 </ion-list>
 
-                <ion-toggle ng-model="user.checked" toggle-class="toggle-calm">
+                <ion-toggle ng-model="user.checked">
                   Enable HTTPS
                 </ion-toggle>
             </div>
