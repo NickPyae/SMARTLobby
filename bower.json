@@ -5,6 +5,8 @@
     "ionic": "driftyco/ionic-bower#1.2.4"
   },
   "dependencies": {
-    "angular-local-storage": "^0.2.7"
+    "angular-local-storage": "^0.2.7",
+    "pouchdb": "^6.0.4",
+    "pouchdb-find": "^0.10.3"
   }
 }

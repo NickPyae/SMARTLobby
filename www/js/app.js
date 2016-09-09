@@ -9,7 +9,8 @@ angular.module('SMARTLobby', ['ionic', 'ngCordova','ionic-toast', 'jett.ionic.fi
   'SMARTLobby.controllers', 'SMARTLobby.factories', 'SMARTLobby.services',
   'SMARTLobby.directives', 'SMARTLobby.constants'])
 
-.run(function($ionicPlatform, $rootScope, $state, $cordovaNetwork, $ionicPopup, APP_CONFIG, localStorageService) {
+.run(function($ionicPlatform, $rootScope, $state, $cordovaNetwork, $ionicPopup, APP_CONFIG,
+              localStorageService, VisitorsStorageFactory) {
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
@@ -38,6 +39,8 @@ angular.module('SMARTLobby', ['ionic', 'ngCordova','ionic-toast', 'jett.ionic.fi
     initApp();
 
     function initApp() {
+      // Initialize pouchdb
+      VisitorsStorageFactory.initDB();
 
       if(!localStorageService.get(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE) && !localStorageService.get(APP_CONFIG.SMS_SERVICE.SELECTED_SERVICE))  {
         localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, APP_CONFIG.VOIP_SERVICE.ANY);
