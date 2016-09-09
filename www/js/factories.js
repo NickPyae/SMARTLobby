@@ -231,7 +231,7 @@ angular.module('SMARTLobby.factories', [])
       success: maskTypes.success
     };
   })
-  .factory('VisitorsStorageFactory', function($q) {
+  .factory('VisitorsStorageFactory', function ($q) {
     var _db;
 
     var _visitors;
@@ -279,20 +279,20 @@ angular.module('SMARTLobby.factories', [])
 
     function getAllVisitors() {
       if (!_visitors) {
-        return $q.when(_db.allDocs({ include_docs: true}))
-          .then(function(docs) {
+        return $q.when(_db.allDocs({include_docs: true}))
+          .then(function (docs) {
 
             // Each row has a .doc object and we just want to send an
             // array of visitor objects back to the calling controller,
             // so let's map the array to contain just the .doc objects.
-            _visitors = docs.rows.map(function(row) {
+            _visitors = docs.rows.map(function (row) {
               // Dates are not automatically converted from a string.
               row.doc.Date = new Date(row.doc.Date);
               return row.doc;
             });
 
             // Listen for changes on the database.
-            _db.changes({ live: true, since: 'now', include_docs: true})
+            _db.changes({live: true, since: 'now', include_docs: true})
               .on('change', onDatabaseChange);
 
             return _visitors;
