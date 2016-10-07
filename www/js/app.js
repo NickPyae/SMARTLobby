@@ -9,8 +9,7 @@ angular.module('SMARTLobby', ['ionic', 'ngCordova','ionic-toast', 'jett.ionic.fi
   'SMARTLobby.controllers', 'SMARTLobby.factories', 'SMARTLobby.services',
   'SMARTLobby.directives', 'SMARTLobby.constants'])
 
-.run(function($ionicPlatform, $rootScope, $state, $cordovaNetwork, $ionicPopup, APP_CONFIG,
-              localStorageService, VisitorsStorageFactory) {
+.run(function($ionicPlatform, $rootScope, $state, $cordovaNetwork, $ionicPopup) {
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
@@ -33,23 +32,6 @@ angular.module('SMARTLobby', ['ionic', 'ngCordova','ionic-toast', 'jett.ionic.fi
         navigator.app.backHistory();
       }
     }, 100);
-
-
-    // Init App
-    initApp();
-
-    function initApp() {
-      // Initialize pouchdb
-      VisitorsStorageFactory.initDB();
-
-      if(!localStorageService.get(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE) && !localStorageService.get(APP_CONFIG.SMS_SERVICE.SELECTED_SERVICE))  {
-        localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, APP_CONFIG.VOIP_SERVICE.ANY);
-        localStorageService.set(APP_CONFIG.SMS_SERVICE.SELECTED_SMS, APP_CONFIG.SMS_SERVICE.ANY);
-        console.log('localStorageService init');
-      }
-
-      console.log('initApp ready');
-    }
 
     document.addEventListener('deviceready', function () {
 
@@ -81,6 +63,9 @@ angular.module('SMARTLobby', ['ionic', 'ngCordova','ionic-toast', 'jett.ionic.fi
     .setPrefix('SMARTLobby')
     .setStorageType('localStorage')
     .setNotify(true, true);
+
+  // Left aligned navBar title
+  $ionicConfigProvider.navBar.alignTitle('left')
 
   // Disable iOS swipe back
   $ionicConfigProvider.views.swipeBackEnabled(false);

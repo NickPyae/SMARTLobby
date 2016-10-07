@@ -6,7 +6,7 @@ angular.module('SMARTLobby.factories', [])
                      guest_image, guest_name, guest_organization,
                      host_contact_1, host_contact_2, host_checkInDateTime,
                      host_image, host_name, host_organization,
-                     meetingID) {
+                     meetingID, guestId) {
 
       this.contact_1 = guest_contact_1;
       this.contact_2 = guest_contact_2;
@@ -24,7 +24,7 @@ angular.module('SMARTLobby.factories', [])
       this.host_organization = host_organization;
 
       this.remark = '';
-      this.guestId = '';
+      this.guestId = guestId;
 
       this.meetingID = meetingID;
     }
@@ -38,15 +38,24 @@ angular.module('SMARTLobby.factories', [])
 
         var http = localStorageService.get(APP_CONFIG.IS_HTTPS) ? 'https' : 'http';
 
-        //$http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '&callback=JSON_CALLBACK').
-        //  success(function (data, status, headers, config) {
-        $http.get('./test/visitors-list.json').
+        $http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '&callback=JSON_CALLBACK').
           success(function (data, status, headers, config) {
-            //console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '\t' + JSON.stringify(data));
+        //$http.get('./test/visitors-list.json').
+        //  success(function (data, status, headers, config) {
+            console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '\t' + JSON.stringify(data));
 
             var visitors = [];
 
-            //angular.forEach(data.v, function (visitor) {
+            angular.forEach(data.v, function (visitor) {
+
+              var v = new Visitor(visitor.g.c1, visitor.g.c2, visitor.g.ci, visitor.g.img, visitor.g.n, visitor.g.o,
+                visitor.h.c1, visitor.h.c2, visitor.h.ci, visitor.h.img, visitor.h.n, visitor.h.o,
+                visitor.sr, visitor.g.vid);
+
+              visitors.push(v);
+            });
+
+            //angular.forEach(data, function (visitor) {
             //
             //  var v = new Visitor(visitor.g.c1, visitor.g.c2, visitor.g.ci, visitor.g.img, visitor.g.n, visitor.g.o,
             //    visitor.h.c1, visitor.h.c2, visitor.h.ci, visitor.h.img, visitor.h.n, visitor.h.o,
@@ -55,17 +64,28 @@ angular.module('SMARTLobby.factories', [])
             //  visitors.push(v);
             //});
 
-            angular.forEach(data, function (visitor) {
-
-              var v = new Visitor(visitor.g.c1, visitor.g.c2, visitor.g.ci, visitor.g.img, visitor.g.n, visitor.g.o,
-                visitor.h.c1, visitor.h.c2, visitor.h.ci, visitor.h.img, visitor.h.n, visitor.h.o,
-                visitor.sr);
-
-              visitors.push(v);
-            });
-
-
             defer.resolve(visitors);
+          })
+          .error(function (err) {
+            defer.reject(err);
+          });
+
+        return defer.promise;
+      },
+      checkOutVisitor: function(guestId) {
+        var defer = $q.defer();
+
+        var ip = localStorageService.get(APP_CONFIG.BASE_IP);
+        var port = APP_CONFIG.PORT;
+
+        var http = localStorageService.get(APP_CONFIG.IS_HTTPS) ? 'https' : 'http';
+
+        $http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.CHECK_OUT + '&vid=' + guestId + '&callback=JSON_CALLBACK').
+          success(function (data, status, headers, config) {
+
+            console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.CHECK_OUT + '\t' + JSON.stringify(data));
+
+            defer.resolve({success: true});
           })
           .error(function (err) {
             defer.reject(err);
@@ -294,6 +314,8 @@ angular.module('SMARTLobby.factories', [])
             // Listen for changes on the database.
             _db.changes({live: true, since: 'now', include_docs: true})
               .on('change', onDatabaseChange);
+
+            console.log(_visitors);
 
             return _visitors;
           });

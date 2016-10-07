@@ -1,4 +1,4 @@
-<ion-view view-title="Dashboard">
+<ion-view view-title="Visitor Dashboard">
   <ion-nav-buttons side="left">
     <button class="button button-icon icon ion-android-more-vertical"
             ng-click="popover.show($event)">
@@ -33,7 +33,7 @@
       <div class="card">
         <div class="item item-divider">
           <i class="icon ion-ios-people divider-icon-left divider-left-icon-larger">
-            <span class="divider-title">Visitors</span>
+            <span class="divider-title">Summary</span>
           </i>
         </div>
         <div class="item item-text-wrap">
@@ -44,7 +44,7 @@
                 <h1 style="width: 100%; text-align: center;">{{selectedSite.totalCheckin}}</h1>
               </div>
               <div class="row">
-                <h3 style="width: 100%; text-align: center;">Checked-in</h3>
+                <h6 style="width: 100%; text-align: center;">Checked-in</h6>
               </div>
             </div>
             <div class="col">
@@ -52,7 +52,7 @@
                 <h1 style="width: 100%; text-align: center;">{{selectedSite.inBuildingVisitor}}</h1>
               </div>
               <div class="row">
-                <h3 style="width: 100%; text-align: center;">In-building</h3>
+                <h6 style="width: 100%; text-align: center;">In-building</h6>
               </div>
             </div>
             <div class="col">
@@ -60,7 +60,7 @@
                 <h1 style="width: 100%; text-align: center;">{{selectedSite.inBuildingHost}}</h1>
               </div>
               <div class="row">
-                <h3 style="width: 100%; text-align: center;">Hosts</h3>
+                <h6 style="width: 100%; text-align: center;">Hosts</h6>
               </div>
             </div>
           </div>
@@ -70,7 +70,7 @@
       <div class="card" ng-if="mode === 'Normal'">
         <div class="item item-divider">
           <i class="icon ion-stats-bars divider-icon-left divider-left-icon-larger">
-            <span class="divider-title">{{selectedSite.siteName}}</span>
+            <span class="divider-title">{{selectedSite.siteName}} Office</span>
           </i>
         </div>
 
@@ -86,8 +86,12 @@
           </i>
         </div>
 
-        <div class="item item-text-wrap">
+        <div class="item item-text-wrap" ng-if="visitors.length > 0">
           <canvas id="pieChart" width="350" height="350" pie-chart-component></canvas>
+        </div>
+
+        <div ng-if="!visitors.length" class="no-results">
+          <p>No Visitors</p>
         </div>
       </div>
     </div>

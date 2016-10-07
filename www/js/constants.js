@@ -33,12 +33,17 @@ var APP_CONFIG =
     SELECTED_SMS: 'SELECTED_SMS',
     ANY: 'Any'
   },
-  BASE_URI: 'http://192.168.1.179:9999/',
+  SITE: {
+    SELECTED_SITE: 'SELECTED_SITE',
+    ANY: 'Any'
+  },
+  BASE_URI: 'http://demo.nexlabs.com/',
   BASE_IP: 'BASE_IP',
-  PORT: ':9999',
+  PORT: ':8001',
   IS_HTTPS: 'IS_HTTPS',
-  GET_VISITORS: 'API/WebAPI.aspx?m=mhello',
-  GET_STATS: 'API/WebApi.aspx?m=mhello_dash'
+  GET_VISITORS: 'nexlabs2/api/webapi.aspx?m=mhello',
+  GET_STATS: 'nexlabs2/api/webapi.aspx?m=mhello_dash',
+  CHECK_OUT: 'nexlabs2/api/webapi.aspx?m=mhello_checkout'
 };
 
 angular.module('SMARTLobby.constants', []).

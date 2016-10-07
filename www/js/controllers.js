@@ -1,11 +1,11 @@
 angular.module('SMARTLobby.controllers', [])
 
-  .controller('LoginCtrl', function ($scope, $state, APP_CONFIG, localStorageService, MaskFactory, AuthFactory) {
+  .controller('LoginCtrl', function ($scope, $state, APP_CONFIG, localStorageService, MaskFactory, AuthFactory, VisitorsStorageFactory) {
 
     if (localStorageService.get(APP_CONFIG.BASE_IP)) {
       $scope.ip = localStorageService.get(APP_CONFIG.BASE_IP);
     } else {
-      $scope.ip = '192.168.1.179';
+      $scope.ip = 'demo.nexlabs.com';
     }
 
     $scope.enableHTTPS = {
@@ -13,34 +13,45 @@ angular.module('SMARTLobby.controllers', [])
     };
 
     $scope.login = function (user, pw, ip, enableHTTPS) {
-      $state.go('tab.visitors');
-      //MaskFactory.loadingMask(true, 'Loading');
-      //
-      //AuthFactory.authServer(ip, enableHTTPS.checked).then(function (data) {
-      //
-      //  if (data.auth) {
-      //    initApp();
-      //
-      //    localStorageService.set(APP_CONFIG.BASE_IP, ip);
-      //    localStorageService.set(APP_CONFIG.IS_HTTPS, enableHTTPS.checked);
-      //
-      //    MaskFactory.loadingMask(false);
-      //
-      //    $state.go('tab.visitors');
-      //  }
-      //
-      //}, function (error) {
-      //  MaskFactory.loadingMask(false);
-      //  MaskFactory.showMask(MaskFactory.error, 'Error logging in.');
-      //});
+      MaskFactory.loadingMask(true, 'Connecting');
+
+      AuthFactory.authServer(ip, enableHTTPS.checked).then(function (data) {
+
+        if (data.auth) {
+          initApp();
+
+          localStorageService.set(APP_CONFIG.BASE_IP, ip);
+          localStorageService.set(APP_CONFIG.IS_HTTPS, enableHTTPS.checked);
+
+          MaskFactory.loadingMask(false);
+
+          $state.go('tab.visitors');
+        }
+
+      }, function (error) {
+        MaskFactory.loadingMask(false);
+        MaskFactory.showMask(MaskFactory.error, 'Error connecting server.');
+      });
     };
 
     function initApp() {
-      if (!localStorageService.get(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE) && !localStorageService.get(APP_CONFIG.SMS_SERVICE.SELECTED_SERVICE)) {
+      //if (!localStorageService.get(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE) &&
+      //  !localStorageService.get(APP_CONFIG.SMS_SERVICE.SELECTED_SERVICE) &&
+      //  !localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE)) {
+      //
+      //  localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, APP_CONFIG.VOIP_SERVICE.ANY);
+      //  localStorageService.set(APP_CONFIG.SMS_SERVICE.SELECTED_SMS, APP_CONFIG.SMS_SERVICE.ANY);
+      //  localStorageService.set(APP_CONFIG.SITE.SELECTED_SITE, APP_CONFIG.SITE.ANY);
+      //}
+
+      // Init PouchDB
+      VisitorsStorageFactory.initDB();
+
+      if (!localStorageService.get(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE) &&
+        !localStorageService.get(APP_CONFIG.SMS_SERVICE.SELECTED_SERVICE)) {
+
         localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, APP_CONFIG.VOIP_SERVICE.ANY);
         localStorageService.set(APP_CONFIG.SMS_SERVICE.SELECTED_SMS, APP_CONFIG.SMS_SERVICE.ANY);
-      } else {
-        console.log('localStorageService has data.');
       }
     }
   })
@@ -602,6 +613,8 @@ angular.module('SMARTLobby.controllers', [])
       VisitorsFactory.getAllVisitors().then(function (visitors) {
         var sortedVisitors = sortVisitorsByName(visitors);
 
+        //var selectedSite = localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE);
+
         $scope.visitors = sortedVisitors;
 
         // Checking data from server against PouchDB data
@@ -666,8 +679,9 @@ angular.module('SMARTLobby.controllers', [])
 
         $scope.groups = groupFilteredVisitors(sortVisitorsByName(filterVisitors));
 
-        if($scope.groups.length === 0) {
-          $scope.searchResult = 'No Results';;
+        if ($scope.groups.length === 0) {
+          $scope.searchResult = 'No Visitors';
+          ;
         }
       }, true);
     }
@@ -770,7 +784,19 @@ angular.module('SMARTLobby.controllers', [])
 
       confirmPopup.then(function (res) {
         if (res) {
-          console.log('Visitor is checked out.');
+          MaskFactory.loadingMask(true, 'Checking out Visitor');
+          VisitorsFactory.checkOutVisitor(visitor.guestId).then(function (data) {
+
+            if (data.success) {
+              MaskFactory.loadingMask(false);
+
+              // Refresh visitors list after checking out
+              getAllVisitors();
+            }
+          }, function (error) {
+            MaskFactory.loadingMask(false);
+            MaskFactory.showMask(MaskFactory.error, 'Error checking out visitor.');
+          });
         } else {
           console.log('User cancels.');
         }
@@ -845,9 +871,9 @@ angular.module('SMARTLobby.controllers', [])
         cancel: function () {
           if ($scope.visitors.length) {
             groupVisitorsByHostName(sortVisitorsByName($scope.visitors));
+          } else {
+            $scope.searchResult = 'No Visitors';
           }
-
-          $scope.searchResult = '';
         }
       });
     };
@@ -1212,7 +1238,7 @@ angular.module('SMARTLobby.controllers', [])
   })
 
   .controller('AppSettingsCtrl', function ($scope, $state, APP_CONFIG, VisitorStatusService,
-                                           localStorageService, MaskFactory) {
+                                           localStorageService, MaskFactory, StatsFactory) {
 
 
     $scope.voipServices = VisitorStatusService.getVoIPServices();
@@ -1239,9 +1265,37 @@ angular.module('SMARTLobby.controllers', [])
       $scope.selectedSMS = selectedItem;
     };
 
+    //MaskFactory.loadingMask(true, 'Loading');
+    //
+    //$scope.sites = [{type: APP_CONFIG.SITE.ANY}];
+    //
+    //StatsFactory.getAllStats().then(function (data) {
+    //
+    //  angular.forEach(data, function (site) {
+    //    $scope.sites.push({type: site.siteName});
+    //  });
+    //
+    //  angular.forEach($scope.sites, function (site) {
+    //    if (site.type === localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE)) {
+    //      $scope.selectedSite = site;
+    //    }
+    //  });
+    //
+    //  MaskFactory.loadingMask(false);
+    //}, function (err) {
+    //  console.log(err);
+    //  MaskFactory.loadingMask(false);
+    //  MaskFactory.showMask(MaskFactory.error, 'Loading sites failed');
+    //});
+    //
+    //$scope.onSelectSiteChange = function (selectedItem) {
+    //  $scope.selectedSite = selectedItem;
+    //};
+
     $scope.saveSettings = function () {
       localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, $scope.selectedVoIPService.type);
       localStorageService.set(APP_CONFIG.SMS_SERVICE.SELECTED_SMS, $scope.selectedSMS.type);
+      //localStorageService.set(APP_CONFIG.SITE.SELECTED_SITE, $scope.selectedSite.type);
 
       MaskFactory.showMask(MaskFactory.success, 'Settings saved.');
     };
