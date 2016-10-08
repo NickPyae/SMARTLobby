@@ -315,8 +315,6 @@ angular.module('SMARTLobby.factories', [])
             _db.changes({live: true, since: 'now', include_docs: true})
               .on('change', onDatabaseChange);
 
-            console.log(_visitors);
-
             return _visitors;
           });
       } else {

@@ -33,7 +33,7 @@
       <div class="card">
         <div class="item item-divider">
           <i class="icon ion-ios-people divider-icon-left divider-left-icon-larger">
-            <span class="divider-title">Summary</span>
+            <span class="divider-title">{{selectedSite.siteName}} Office</span>
           </i>
         </div>
         <div class="item item-text-wrap">
@@ -79,19 +79,15 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" ng-show="mode === 'Emergency'">
         <div class="item item-divider">
           <i class="icon ion-pie-graph divider-icon-left divider-left-icon-larger">
             <span class="divider-title">Contact Statuses</span>
           </i>
         </div>
 
-        <div class="item item-text-wrap" ng-if="visitors.length > 0">
+        <div class="item item-text-wrap">
           <canvas id="pieChart" width="350" height="350" pie-chart-component></canvas>
-        </div>
-
-        <div ng-if="!visitors.length" class="no-results">
-          <p>No Visitors</p>
         </div>
       </div>
     </div>
