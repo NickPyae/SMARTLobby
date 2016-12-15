@@ -1198,30 +1198,53 @@ angular.module('SMARTLobby.controllers', [])
 
 
     $scope.logOut = function () {
-      // Clear all navigation stack history
-      $ionicHistory.clearHistory();
 
-      // Clear all the cache views
-      $ionicHistory.clearCache();
-
-      // Clear all local storage
-      localStorageService.clearAll();
-
-      // Stop global timer
-      clearTimer(true);
-
-      // Reset tabs and navbar color to default
-      AppColorThemeService.setAppColorTheme(APP_CONFIG.THEME.BAR_DEFAULT, APP_CONFIG.THEME.TABS_DEFAULT);
-
-      // Reset mode to default
-      AppModeService.setMode(APP_CONFIG.MODE.DEFAULT);
-
-      VisitorsStorageFactory.deleteAllRecords().then(function () {
-        console.log('All records deleted.');
+      var confirmPopup = $ionicPopup.show({
+        title: 'Logout',
+        buttons: [
+          {text: 'Cancel'},
+          {
+            text: 'OK',
+            type: 'button-dark',
+            onTap: function () {
+              return true;
+            }
+          }
+        ],
+        template: 'Are you sure you want to logout? This will clear all of your saved settings.'
       });
 
-      // Go back to login view
-      $state.go('login');
+      confirmPopup.then(function (res) {
+        if (res) {
+          // Clear all navigation stack history
+          $ionicHistory.clearHistory();
+
+          // Clear all the cache views
+          $ionicHistory.clearCache();
+
+          // Clear all local storage
+          localStorageService.clearAll();
+
+          // Stop global timer
+          clearTimer(true);
+
+          // Reset tabs and navbar color to default
+          AppColorThemeService.setAppColorTheme(APP_CONFIG.THEME.BAR_DEFAULT, APP_CONFIG.THEME.TABS_DEFAULT);
+
+          // Reset mode to default
+          AppModeService.setMode(APP_CONFIG.MODE.DEFAULT);
+
+          VisitorsStorageFactory.deleteAllRecords().then(function () {
+            console.log('All records deleted.');
+          });
+
+          // Go back to login view
+          $state.go('login');
+        } else {
+          console.log('User cancels.');
+        }
+      });
+
     };
 
     function clearTimer(hasLoggedOut) {

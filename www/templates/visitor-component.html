@@ -1,13 +1,31 @@
-<h2>{{visitor.name}}</h2>
 
-<p>{{visitor.organization}}</p>
+<!-- Visitor Avatar -->
+<a class="item item-avatar item-borderless" style="background-color: transparent !important;margin-left: -10px;">
+  <img ng-src={{visitor.avatarImg}} err-src="img/visitor.png" style="margin-top: 20px;">
 
-<p>Checked in at {{visitor.checkInDateTime}}</p>
+  <h2>{{visitor.name}}</h2>
 
-<p>{{visitor.contactStatus}}</p>
-<span class="visitor-status"
-      ng-style="{'background-color': getVisitorStatus(visitor)}"/>
-</span>
+  <p>{{visitor.organization}}</p>
+
+  <p>Checked in at {{visitor.checkInDateTime}}</p>
+
+  <p>{{visitor.contactStatus}}</p>
+  <span class="visitor-status"
+        ng-style="{'background-color': getVisitorStatus(visitor)}"/>
+  </span>
+</a>
+
+
+<!--<h2>{{visitor.name}}</h2>-->
+
+<!--<p>{{visitor.organization}}</p>-->
+
+<!--<p>Checked in at {{visitor.checkInDateTime}}</p>-->
+
+<!--<p>{{visitor.contactStatus}}</p>-->
+<!--<span class="visitor-status"-->
+      <!--ng-style="{'background-color': getVisitorStatus(visitor)}"/>-->
+<!--</span>-->
 
 <!--<i class="icon ion-chevron-right icon-accessory"></i>-->
 

@@ -25,34 +25,37 @@
           <div visitor-divider-component></div>
         </div>
 
-        <ion-item class="item-icon-right visitor-info"
-                  type="item-text-wrap"
+        <ion-item class="visitor-info"
                   ng-repeat="visitor in group.visitors"
                   ng-click="goToItem(visitor.meetingID)"
                   ng-show="group.isShown">
-          <div click-to-reveal-option-component class="div-click-content"></div>
 
-          <div visitor-component></div>
+          <!--<div click-to-reveal-option-component class="div-click-content"></div>-->
+
+          <div click-to-reveal-option-component visitor-component></div>
 
           <ion-option-button class="button option-button ion-option-button-background-color" side="left">
             <ion-checkbox class="ion-option-checkbox checkbox-dark" ng-model="visitor.isChecked">
             </ion-checkbox>
           </ion-option-button>
 
-          <ion-option-button class="button-dark option-button" side="right"
+          <ion-option-button class="button-dark" side="right"
                              ng-click="callVisitor(visitor)">
-            <i class="icon ion-ios-telephone-outline"></i>
-            <span>Call</span>
+            <i class="icon ion-ios-telephone-outline">
+              Call
+            </i>
           </ion-option-button>
-          <ion-option-button class="button-positive option-button" side="right"
+          <ion-option-button class="button-positive" side="right"
                              ng-click="voip(visitor)">
-            <i class="icon ion-social-whatsapp-outline"></i>
-            <span>VoIP</span>
+            <i class="icon ion-social-whatsapp-outline">
+              VoIP
+            </i>
           </ion-option-button>
-          <ion-option-button class="button-assertive option-button" side="right"
+          <ion-option-button class="button-assertive" side="right"
                              ng-click="checkout(visitor)">
-            <i class="icon ion-log-out" style="right: 30px;"></i>
-            <span>Checkout</span>
+            <i class="icon ion-log-out">
+              Checkout
+            </i>
           </ion-option-button>
 
         </ion-item>

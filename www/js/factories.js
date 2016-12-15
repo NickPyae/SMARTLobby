@@ -6,7 +6,7 @@ angular.module('SMARTLobby.factories', [])
                      guest_image, guest_name, guest_organization,
                      host_contact_1, host_contact_2, host_checkInDateTime,
                      host_image, host_name, host_organization,
-                     meetingID, guestId) {
+                     meetingID, guestId, avatarImg) {
 
       this.contact_1 = guest_contact_1;
       this.contact_2 = guest_contact_2;
@@ -25,6 +25,7 @@ angular.module('SMARTLobby.factories', [])
 
       this.remark = '';
       this.guestId = guestId;
+      this.avatarImg = avatarImg || 'img/visitor.png';
 
       this.meetingID = meetingID;
     }
@@ -48,9 +49,15 @@ angular.module('SMARTLobby.factories', [])
 
             angular.forEach(data.v, function (visitor) {
 
+              var avatarImg = null;
+
+              if(visitor.g.img) {
+                avatarImg = http + '://' + ip + port + '/' + APP_CONFIG.PHOTO_DIR + visitor.g.img;
+              }
+
               var v = new Visitor(visitor.g.c1, visitor.g.c2, visitor.g.ci, visitor.g.img, visitor.g.n, visitor.g.o,
                 visitor.h.c1, visitor.h.c2, visitor.h.ci, visitor.h.img, visitor.h.n, visitor.h.o,
-                visitor.sr, visitor.g.vid);
+                visitor.sr, visitor.g.vid, avatarImg);
 
               visitors.push(v);
             });

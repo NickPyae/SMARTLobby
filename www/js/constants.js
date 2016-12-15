@@ -41,9 +41,10 @@ var APP_CONFIG =
   BASE_IP: 'BASE_IP',
   PORT: ':8001',
   IS_HTTPS: 'IS_HTTPS',
-  GET_VISITORS: 'nexlabs2/api/webapi.aspx?m=mhello',
-  GET_STATS: 'nexlabs2/api/webapi.aspx?m=mhello_dash',
-  CHECK_OUT: 'nexlabs2/api/webapi.aspx?m=mhello_checkout'
+  GET_VISITORS: 'nexlabs3/api/webapi.aspx?m=mhello',
+  GET_STATS: 'nexlabs3/api/webapi.aspx?m=mhello_dash',
+  CHECK_OUT: 'nexlabs3/api/webapi.aspx?m=mhello_checkout',
+  PHOTO_DIR: 'nexlabs3/Res/'
 };
 
 angular.module('SMARTLobby.constants', []).

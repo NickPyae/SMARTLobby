@@ -3,6 +3,12 @@
   display: none !important;
 }
 
+.app-title {
+  font-weight: bold;
+  color: #fff;
+  font-size: 30px;
+}
+
 /* Overwrite android ionic-filter-bar border-bottom */
 .platform-android .filter-bar .filter-bar-positive .item-input-wrapper {
   border-bottom: 1px solid white;
@@ -25,31 +31,28 @@
   background-color: #444444;
 }
 
-.option-button span {
-  margin-top: 46px;
-}
-
 .item-stacked-label span {
   color: white;
 }
 
 .visitor-status {
-  /*display: block;*/
-  /*position: absolute;*/
-  /*left: 15px;*/
-  /*top: 60px;*/
-  /*width: 40px;*/
-  /*height: 4px;*/
-  /*border-radius: 5px;*/
-
-  /** visitor status without avatar **/
+  /** visitor status with avatar **/
   display: block;
   position: absolute;
-  left: 5px;
-  top: 18px;
-  width: 4px;
-  height: 80px;
+  left: 15px;
+  top: 80px;
+  width: 40px;
+  height: 4px;
   border-radius: 5px;
+
+  /** visitor status without avatar **/
+  /*display: block;*/
+  /*position: absolute;*/
+  /*left: 5px;*/
+  /*top: 5px;*/
+  /*width: 4px;*/
+  /*height: 140px;*/
+  /*border-radius: 5px;*/
 }
 
 .visitor-info p {
