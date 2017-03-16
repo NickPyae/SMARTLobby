@@ -1,6 +1,6 @@
 angular.module('SMARTLobby.controllers', [])
 
-  .controller('LoginCtrl', function ($scope, $state, APP_CONFIG, localStorageService, MaskFactory, AuthFactory, VisitorsStorageFactory) {
+  .controller('LoginCtrl', function ($scope, $q, $state, APP_CONFIG, localStorageService, MaskFactory, VisitorsStorageFactory, AuthFactory, StatsFactory) {
 
     if (localStorageService.get(APP_CONFIG.BASE_IP)) {
       $scope.ip = localStorageService.get(APP_CONFIG.BASE_IP);
@@ -9,41 +9,49 @@ angular.module('SMARTLobby.controllers', [])
     }
 
     $scope.enableHTTPS = {
-      checked: false
+      checked: true
     };
 
     $scope.login = function (user, pw, ip, enableHTTPS) {
-      MaskFactory.loadingMask(true, 'Connecting');
 
-      AuthFactory.authServer(ip, enableHTTPS.checked).then(function (data) {
+      MaskFactory.loadingMask(true, 'Loading');
 
-        if (data.auth) {
-          initApp();
+      AuthFactory.authServer(ip, enableHTTPS.checked).then(function(data) {
+          if(data.auth) {
+            localStorageService.set(APP_CONFIG.BASE_IP, ip);
+            localStorageService.set(APP_CONFIG.IS_HTTPS, enableHTTPS.checked);
 
-          localStorageService.set(APP_CONFIG.BASE_IP, ip);
-          localStorageService.set(APP_CONFIG.IS_HTTPS, enableHTTPS.checked);
+            StatsFactory.getAllStats().then(function(sites) {
+              initApp();
 
-          MaskFactory.loadingMask(false);
+              if(sites && sites.length !== 0) {
 
-          $state.go('tab.visitors');
-        }
+                var savedSite = JSON.parse(localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE));
 
-      }, function (error) {
+                if(!savedSite) {
+                  sites.map(function(site) {
+                    if(site.siteName.toLowerCase() === 'singapore') {
+                      var defaultSite = JSON.stringify({type: site.siteName, siteId: site.longSiteId});
+                      localStorageService.set(APP_CONFIG.SITE.SELECTED_SITE, defaultSite);
+                    }
+                  });
+                }
+              }
+
+              MaskFactory.loadingMask(false);
+              $state.go('tab.dash');
+            }, function(error) {
+              MaskFactory.loadingMask(false);
+              MaskFactory.showMask(MaskFactory.error, 'Loading sites failed');
+            });
+          }
+      },function(error) {
         MaskFactory.loadingMask(false);
         MaskFactory.showMask(MaskFactory.error, 'Error connecting server.');
       });
     };
 
     function initApp() {
-      //if (!localStorageService.get(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE) &&
-      //  !localStorageService.get(APP_CONFIG.SMS_SERVICE.SELECTED_SERVICE) &&
-      //  !localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE)) {
-      //
-      //  localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, APP_CONFIG.VOIP_SERVICE.ANY);
-      //  localStorageService.set(APP_CONFIG.SMS_SERVICE.SELECTED_SMS, APP_CONFIG.SMS_SERVICE.ANY);
-      //  localStorageService.set(APP_CONFIG.SITE.SELECTED_SITE, APP_CONFIG.SITE.ANY);
-      //}
-
       // Init PouchDB
       VisitorsStorageFactory.initDB();
 
@@ -59,7 +67,8 @@ angular.module('SMARTLobby.controllers', [])
   .controller('DashCtrl', function ($rootScope, $scope, $state, APP_CONFIG,
                                     $timeout, TimerService, AppModeService,
                                     $ionicPopup, ionicToast, AppColorThemeService,
-                                    StatsFactory, MaskFactory, $ionicPopover, $cordovaNetwork, $ionicScrollDelegate) {
+                                    StatsFactory, MaskFactory, $ionicPopover, $cordovaNetwork,
+                                    $ionicScrollDelegate, VisitorsStorageFactory, VisitorsFactory, ContactStatusService) {
 
     document.addEventListener('deviceready', function () {
       // listen for Online event
@@ -80,9 +89,32 @@ angular.module('SMARTLobby.controllers', [])
       // Get all the stats from server
       getAllStats();
 
-      // Firing this event to update chart
-      $rootScope.$broadcast('updatePieChart', $scope.mode);
+      // Updating piechart by visitors list
+      updatePieChartByVisitors();
     });
+
+    function updatePieChartByVisitors() {
+
+      VisitorsFactory.getAllVisitors().then(function(visitors) {
+
+        VisitorsStorageFactory.getAllVisitors().then(function (allDBVisitors) {
+          angular.forEach(visitors, function (sv) {
+            angular.forEach(allDBVisitors, function (dbV) {
+
+              if (sv.name === dbV.name) {
+                sv.contactStatus = dbV.contactStatus;
+              }
+            });
+          });
+
+          // Set in memory visitors
+          ContactStatusService.setVisitors(visitors);
+
+          // Firing this event to update chart
+          $rootScope.$broadcast('updatePieChart', $scope.mode);
+        });
+      });
+    }
 
     function getAllStats() {
 
@@ -188,6 +220,32 @@ angular.module('SMARTLobby.controllers', [])
 
         confirmPopup.then(function (res) {
           if (res) {
+            //Get all contactStatus of locally stored PouchDB and push them to server
+            VisitorsStorageFactory.getAllVisitors().then(function (allDBVisitors) {
+                if(allDBVisitors && allDBVisitors.length !== 0) {
+                  var allV = {
+                    g: [],
+                    dt: {}
+                  };
+
+                  var apiLastCalledTime = new Date().getTime().toString();
+
+                  allDBVisitors.map(function(visitor) {
+                    allV['g'].push({
+                      gid: visitor.guestId,
+                      sts: visitor.contactStatus.replace(/\s/g, ''),
+                      stsdt: visitor.contactStatusLastUpdatedTime
+                    });
+                  });
+
+                  allV['dt'] = apiLastCalledTime;
+
+                  VisitorsFactory.pushEmergencyContactStatus(allV).then(function(response) {
+
+                  });
+                }
+            });
+
             // Update global timer sec
             updateTimer();
 
@@ -208,8 +266,8 @@ angular.module('SMARTLobby.controllers', [])
             // Updating tabs and navbar color
             AppColorThemeService.setAppColorTheme(APP_CONFIG.THEME.BAR_EMERGENCY, APP_CONFIG.THEME.TABS_EMERGENCY);
 
-            // Firing this event to update chart
-            $rootScope.$broadcast('updatePieChart', $scope.mode);
+            // Updating piechart by visitors list
+            updatePieChartByVisitors();
           }
         });
 
@@ -230,10 +288,9 @@ angular.module('SMARTLobby.controllers', [])
         // Updating tabs and navbar color
         AppColorThemeService.setAppColorTheme(APP_CONFIG.THEME.BAR_DEFAULT, APP_CONFIG.THEME.TABS_DEFAULT);
 
-        // Firing this event to update chart
-        $rootScope.$broadcast('updatePieChart', $scope.mode);
+        // Updating piechart by visitors list
+        updatePieChartByVisitors();
       }
-
     };
 
     // Global timer in emergency mode
@@ -496,9 +553,6 @@ angular.module('SMARTLobby.controllers', [])
     $scope.refreshVisitors = function () {
       // Getting all visitors from web service
       getAllVisitors();
-
-      // Scrolling back to top
-      $ionicScrollDelegate.$getByHandle('mainScroll').scrollTop();
     };
 
     $scope.toggleMode = function () {
@@ -523,6 +577,32 @@ angular.module('SMARTLobby.controllers', [])
 
         confirmPopup.then(function (res) {
           if (res) {
+            //Get all contactStatus of locally stored PouchDB and push them to server
+            VisitorsStorageFactory.getAllVisitors().then(function (allDBVisitors) {
+              if(allDBVisitors && allDBVisitors.length !== 0) {
+                var allV = {
+                  g: [],
+                  dt: {}
+                };
+
+                var apiLastCalledTime = new Date().getTime().toString();
+
+                allDBVisitors.map(function(visitor) {
+                  allV['g'].push({
+                    gid: visitor.guestId,
+                    sts: visitor.contactStatus.replace(/\s/g, ''),
+                    stsdt: visitor.contactStatusLastUpdatedTime
+                  });
+                });
+
+                allV['dt'] = apiLastCalledTime;
+
+                VisitorsFactory.pushEmergencyContactStatus(allV).then(function(response) {
+
+                });
+              }
+            });
+
             // Update global timer sec
             updateTimer();
 
@@ -560,7 +640,6 @@ angular.module('SMARTLobby.controllers', [])
         // Updating tabs and navbar color
         AppColorThemeService.setAppColorTheme(APP_CONFIG.THEME.BAR_DEFAULT, APP_CONFIG.THEME.TABS_DEFAULT);
       }
-
     };
 
     // Global timer in emergency mode
@@ -571,8 +650,6 @@ angular.module('SMARTLobby.controllers', [])
       $scope.timer = $timeout(updateTimer, 1000);
 
       TimerService.setTimer({timer: $scope.timer, sec: $scope.sec});
-
-      //console.log(TimerService.getTimer());
     };
 
     function clearTimer() {
@@ -613,12 +690,10 @@ angular.module('SMARTLobby.controllers', [])
       VisitorsFactory.getAllVisitors().then(function (visitors) {
         var sortedVisitors = sortVisitorsByName(visitors);
 
-        //var selectedSite = localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE);
-
         $scope.visitors = sortedVisitors;
 
         // Checking data from server against PouchDB data
-        // Update visitor contactstatus to PouchDB data contactstatus
+        // Update contactStatus property of locally stored PouchDB visitor data to the list of visitors returned from server
         VisitorsStorageFactory.getAllVisitors().then(function (allDBVisitors) {
           angular.forEach($scope.visitors, function (sv) {
             angular.forEach(allDBVisitors, function (dbV) {
@@ -642,7 +717,13 @@ angular.module('SMARTLobby.controllers', [])
         console.log(err);
         MaskFactory.loadingMask(false);
         MaskFactory.showMask(MaskFactory.error, 'Loading visitors failed');
-      });
+      }).finally(function() {
+        // Stop the ion-refresher from spinning
+        $scope.$broadcast('scroll.refreshComplete');
+
+        // Scrolling back to top
+        $ionicScrollDelegate.$getByHandle('mainScroll').scrollTop();
+      });;
     }
 
     function groupVisitorsByHostName(visitors) {
@@ -812,6 +893,9 @@ angular.module('SMARTLobby.controllers', [])
         // $scope.defaultContactStatus.value is value from selected radio item
         if (visitor.isChecked) {
           visitor.contactStatus = $scope.defaultContactStatus.status;
+
+          // Update visitor contact status last updated time
+          visitor.contactStatusLastUpdatedTime = new Date().getTime().toString();
 
           VisitorsStorageFactory.getVisitor(visitor.name).then(function (vi) {
             if (vi.docs.length) {
@@ -1104,7 +1188,7 @@ angular.module('SMARTLobby.controllers', [])
   .controller('SettingsCtrl', function ($scope, $state, $ionicHistory, localStorageService,
                                         $timeout, TimerService, AppModeService,
                                         ionicToast, $ionicPopup, APP_CONFIG,
-                                        AppColorThemeService, VisitorsStorageFactory) {
+                                        AppColorThemeService, VisitorsStorageFactory, VisitorsFactory) {
 
     $scope.$on('$ionicView.beforeEnter', function (event, data) {
 
@@ -1138,6 +1222,32 @@ angular.module('SMARTLobby.controllers', [])
 
         confirmPopup.then(function (res) {
           if (res) {
+            //Get all contactStatus of locally stored PouchDB and push them to server
+            VisitorsStorageFactory.getAllVisitors().then(function (allDBVisitors) {
+              if(allDBVisitors && allDBVisitors.length !== 0) {
+                var allV = {
+                  g: [],
+                  dt: {}
+                };
+
+                var apiLastCalledTime = new Date().getTime().toString();
+
+                allDBVisitors.map(function(visitor) {
+                  allV['g'].push({
+                    gid: visitor.guestId,
+                    sts: visitor.contactStatus.replace(/\s/g, ''),
+                    stsdt: visitor.contactStatusLastUpdatedTime
+                  });
+                });
+
+                allV['dt'] = apiLastCalledTime;
+
+                VisitorsFactory.pushEmergencyContactStatus(allV).then(function(response) {
+
+                });
+              }
+            });
+
             // Update global timer sec
             updateTimer();
 
@@ -1234,6 +1344,7 @@ angular.module('SMARTLobby.controllers', [])
           // Reset mode to default
           AppModeService.setMode(APP_CONFIG.MODE.DEFAULT);
 
+          // Delete all records from PouchDB
           VisitorsStorageFactory.deleteAllRecords().then(function () {
             console.log('All records deleted.');
           });
@@ -1288,37 +1399,42 @@ angular.module('SMARTLobby.controllers', [])
       $scope.selectedSMS = selectedItem;
     };
 
-    //MaskFactory.loadingMask(true, 'Loading');
-    //
-    //$scope.sites = [{type: APP_CONFIG.SITE.ANY}];
-    //
-    //StatsFactory.getAllStats().then(function (data) {
-    //
-    //  angular.forEach(data, function (site) {
-    //    $scope.sites.push({type: site.siteName});
-    //  });
-    //
-    //  angular.forEach($scope.sites, function (site) {
-    //    if (site.type === localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE)) {
-    //      $scope.selectedSite = site;
-    //    }
-    //  });
-    //
-    //  MaskFactory.loadingMask(false);
-    //}, function (err) {
-    //  console.log(err);
-    //  MaskFactory.loadingMask(false);
-    //  MaskFactory.showMask(MaskFactory.error, 'Loading sites failed');
-    //});
-    //
-    //$scope.onSelectSiteChange = function (selectedItem) {
-    //  $scope.selectedSite = selectedItem;
-    //};
+    MaskFactory.loadingMask(true, 'Loading');
+
+    $scope.sites = [];
+
+    StatsFactory.getAllStats().then(function (data) {
+
+      data.map(function(site) {
+        $scope.sites.push({type: site.siteName, siteId: site.longSiteId});
+      });
+
+      var savedSite = JSON.parse(localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE));
+
+      if(savedSite) {
+        $scope.sites.map(function(site) {
+          if (site.type === savedSite.type) {
+            $scope.selectedSite = site;
+          }
+        });
+      }
+
+      MaskFactory.loadingMask(false);
+    }, function (err) {
+      console.log(err);
+      MaskFactory.loadingMask(false);
+      MaskFactory.showMask(MaskFactory.error, 'Loading sites failed');
+    });
+
+    $scope.onSelectSiteChange = function (selectedItem) {
+      $scope.selectedSite = selectedItem;
+    };
 
     $scope.saveSettings = function () {
       localStorageService.set(APP_CONFIG.VOIP_SERVICE.SELECTED_SERVICE, $scope.selectedVoIPService.type);
       localStorageService.set(APP_CONFIG.SMS_SERVICE.SELECTED_SMS, $scope.selectedSMS.type);
-      //localStorageService.set(APP_CONFIG.SITE.SELECTED_SITE, $scope.selectedSite.type);
+      var savedSite = JSON.stringify($scope.selectedSite);
+      localStorageService.set(APP_CONFIG.SITE.SELECTED_SITE, savedSite);
 
       MaskFactory.showMask(MaskFactory.success, 'Settings saved.');
     };
@@ -1335,23 +1451,19 @@ angular.module('SMARTLobby.controllers', [])
 
       MaskFactory.loadingMask(true, 'Loading');
 
-      AuthFactory.authServer(server, isHTTPS).then(function (data) {
+      AuthFactory.authServer(server, isHTTPS).then(function(data) {
+          if(data.auth) {
 
-        if (data.auth) {
-          localStorageService.set(APP_CONFIG.BASE_IP, server);
-          localStorageService.set(APP_CONFIG.IS_HTTPS, isHTTPS);
-
-          MaskFactory.loadingMask(false);
-          MaskFactory.showMask(MaskFactory.success, 'Settings saved.');
-        }
-
-      }, function (error) {
+            localStorageService.set(APP_CONFIG.BASE_IP, server);
+            localStorageService.set(APP_CONFIG.IS_HTTPS, isHTTPS);
+          }
+       MaskFactory.showMask(MaskFactory.success, 'Settings saved.');
+      }, function(error) {
         $scope.user.server = localStorageService.get(APP_CONFIG.BASE_IP);
         $scope.user.checked = localStorageService.get(APP_CONFIG.IS_HTTPS);
 
         MaskFactory.loadingMask(false);
         MaskFactory.showMask(MaskFactory.error, 'Error saving settings.');
       });
-
     };
   });

@@ -110,7 +110,6 @@ angular.module('SMARTLobby.directives', [])
         };
 
         scope.$on('updatePieChart', function (event, args) {
-
           // Clearing data before adding new labels
           pieChartConfig.data.labels = [];
 
@@ -126,7 +125,9 @@ angular.module('SMARTLobby.directives', [])
           var vacatingCount = 0;
           var evacuatedCount = 0;
 
-          angular.forEach(ContactStatusService.getVisitors(), function (visitor) {
+          var allVisitors = ContactStatusService.getVisitors();
+
+          angular.forEach(allVisitors, function (visitor) {
             if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.UNCONTACTED) {
               unCountactedCount++;
             } else if (visitor.contactStatus === APP_CONFIG.CONTACT_STATUS.NO_REPLY) {

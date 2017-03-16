@@ -97,13 +97,6 @@
   font-weight: bold;
 }
 
-.div-click-content {
-  position: absolute;
-  top: 0px;
-  width: 200px;
-  height: 120px;
-}
-
 .ion-option-button-background-color {
   background-color: #CCCCCC;
 }

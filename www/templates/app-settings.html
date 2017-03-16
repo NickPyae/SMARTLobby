@@ -37,19 +37,18 @@
         </select>
       </li>
     </div>
-
-    <!--<div class="list card">-->
-      <!--<li class="item item-input-inset item-select">-->
-        <!--<div class="input-label">-->
-          <!--Sites-->
-        <!--</div>-->
-        <!--<select-->
-          <!--ng-init="selectedSite"-->
-          <!--ng-options="site.type for site in sites"-->
-          <!--ng-model="selectedSite"-->
-          <!--ng-change="onSelectSiteChange(selectedSite)">-->
-        <!--</select>-->
-      <!--</li>-->
-    <!--</div>-->
+    <div class="list card">
+      <li class="item item-input-inset item-select">
+        <div class="input-label">
+          Default Site
+        </div>
+        <select
+          ng-init="selectedSite"
+          ng-options="site.type for site in sites"
+          ng-model="selectedSite"
+          ng-change="onSelectSiteChange(selectedSite)">
+        </select>
+      </li>
+    </div>
   </ion-content>
 </ion-view>

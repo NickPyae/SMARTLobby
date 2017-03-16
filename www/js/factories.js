@@ -28,6 +28,8 @@ angular.module('SMARTLobby.factories', [])
       this.avatarImg = avatarImg || 'img/visitor.png';
 
       this.meetingID = meetingID;
+      this.contactStatusLastUpdatedTime = new Date().getTime().toString();
+      this.apiLastCalledTime = new Date().getTime().toString();
     }
 
     return {
@@ -38,12 +40,13 @@ angular.module('SMARTLobby.factories', [])
         var port = APP_CONFIG.PORT;
 
         var http = localStorageService.get(APP_CONFIG.IS_HTTPS) ? 'https' : 'http';
+        var site = JSON.parse(localStorageService.get(APP_CONFIG.SITE.SELECTED_SITE));
 
-        $http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '&callback=JSON_CALLBACK').
+        $http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '&s=' + site.siteId + '&callback=JSON_CALLBACK').
           success(function (data, status, headers, config) {
-        //$http.get('./test/visitors-list.json').
+        //$http.get('./mock-json/visitors-list.json').
         //  success(function (data, status, headers, config) {
-            console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '\t' + JSON.stringify(data));
+            console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.GET_VISITORS + '&s=' + site.siteId + '\t' + JSON.stringify(data));
 
             var visitors = [];
 
@@ -62,6 +65,7 @@ angular.module('SMARTLobby.factories', [])
               visitors.push(v);
             });
 
+            // Uncomment to test with mock json data structure
             //angular.forEach(data, function (visitor) {
             //
             //  var v = new Visitor(visitor.g.c1, visitor.g.c2, visitor.g.ci, visitor.g.img, visitor.g.n, visitor.g.o,
@@ -99,13 +103,44 @@ angular.module('SMARTLobby.factories', [])
           });
 
         return defer.promise;
+      },
+      pushEmergencyContactStatus: function(visitors) {
+        var defer = $q.defer();
+
+        var ip = localStorageService.get(APP_CONFIG.BASE_IP);
+        var port = APP_CONFIG.PORT;
+
+        var http = localStorageService.get(APP_CONFIG.IS_HTTPS) ? 'https' : 'http';
+
+        var site = JSON.parse(localStorageService.get('SELECTED_SITE'));
+        var siteId = site.siteId;
+
+        var allV = JSON.stringify(visitors);
+
+        var url = http + '://' + ip + port + '/' + APP_CONFIG.UPDATE_CONTACT_STATUS + '&m_u=' + siteId;
+
+        $http({
+          method: 'POST',
+          url: url,
+          data: allV,
+          headers: {'Content-Type': 'application/json'}
+        }).then(function(data) {
+          console.log('JSON from ' + url + '\t' + JSON.stringify(data));
+
+          defer.resolve(data);
+        }, function(err) {
+          defer.reject(err);
+        });
+
+        return defer.promise;
       }
     };
   })
   .factory('StatsFactory', function ($http, $q, APP_CONFIG, localStorageService) {
 
-    function Site(off, siteId, siteName, tActiveHost, tCin, tOnSite) {
+    function Site(off, longSiteId, siteId, siteName, tActiveHost, tCin, tOnSite) {
       this.timeAtSite = off;
+      this.longSiteId = longSiteId;
       this.siteId = siteId;
       this.siteName = siteName;
       this.inBuildingHost = tActiveHost;
@@ -133,14 +168,14 @@ angular.module('SMARTLobby.factories', [])
 
         $http.jsonp(http + '://' + ip + port + '/' + APP_CONFIG.GET_STATS + '&callback=JSON_CALLBACK').
           success(function (data, status, headers, config) {
-            //console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.GET_STATS + '\t' + JSON.stringify(data));
+            console.log('JSON from ' + http + '://' + ip + port + '/' + APP_CONFIG.GET_STATS + '\t' + JSON.stringify(data));
 
             var siteList = [];
             var siteDetailsList = [];
 
             // Destructuring each site
             angular.forEach(data.v.i, function (site) {
-              var site = new Site(site.off, site.siteId, site.siteName, site.tActiveHost,
+              var site = new Site(site.off, site.id, site.siteId, site.siteName, site.tActiveHost,
                 site.tCin, site.tOnSite);
 
               siteList.push(site);
@@ -201,7 +236,7 @@ angular.module('SMARTLobby.factories', [])
     var timerFactory = {};
 
     timerFactory.getStats = function () {
-      $http.get('./test/stats.json')
+      $http.get('./js/stats.json')
         .success(function (data, status) {
           deferred.resolve(data);
 

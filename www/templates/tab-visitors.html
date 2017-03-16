@@ -6,9 +6,9 @@
     </button>
   </ion-nav-buttons>
   <ion-nav-buttons side="right">
-    <button class="button button-icon icon ion-android-refresh"
-            ng-click="refreshVisitors()">
-    </button>
+    <!--<button class="button button-icon icon ion-android-refresh"-->
+            <!--ng-click="refreshVisitors()">-->
+    <!--</button>-->
     <button class="button button-outline button-light"
             ng-click="toggleMode()">
       {{mode}}
@@ -16,6 +16,10 @@
   </ion-nav-buttons>
 
   <ion-content has-bouncing="false" delegate-handle="mainScroll">
+    <ion-refresher
+      pulling-icon="ion-load-d"
+      on-refresh="refreshVisitors()">
+    </ion-refresher>
     <ion-list can-swipe="true" swipe-direction="both">
 
       <div ng-repeat="group in groups">
@@ -29,8 +33,6 @@
                   ng-repeat="visitor in group.visitors"
                   ng-click="goToItem(visitor.meetingID)"
                   ng-show="group.isShown">
-
-          <!--<div click-to-reveal-option-component class="div-click-content"></div>-->
 
           <div click-to-reveal-option-component visitor-component></div>
 
